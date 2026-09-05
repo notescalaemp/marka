@@ -2,11 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { useToast } from "@/components/Toast";
 import { formatNumber } from "@/lib/format";
 import { getAdminAcquisitionAnalytics } from "@/lib/api";
 import type { AdminAcquisitionDto } from "@/lib/api-types";
@@ -17,7 +15,6 @@ export function AcquisitionPage() {
   const [data, setData] = useState<AdminAcquisitionDto | null>(null);
   const [channel, setChannel] = useState("all");
   const [step, setStep] = useState(0);
-  const toast = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,11 +82,6 @@ export function AcquisitionPage() {
       <PageHeader
         title="Acquisition"
         description="Funil: Visitantes → Trial → Payment."
-        actions={
-          <Button size="sm" onClick={() => toast.show("Campanha criada (mock)")}>
-            Nova campanha
-          </Button>
-        }
       />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

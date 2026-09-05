@@ -96,6 +96,7 @@ export interface AdminEstablishmentDetailDto {
     canceledAt: string | null;
   } | null;
   mrr: number;
+  ltv: number;
   members: number;
   professionals: number;
   customers: number;
@@ -108,6 +109,20 @@ export interface AdminEstablishmentDetailDto {
     totalPaid: number;
     failedPayments: number;
     refunds: number;
+    delinquency: boolean;
+    delinquencyAmount: number;
+  };
+  catalog: {
+    services: number;
+    products: number;
+    campaigns: number;
+  };
+  engagement: {
+    sessions: number;
+    dau: number;
+    wau: number;
+    mau: number;
+    activeDays: number;
   };
   utilization: number;
   recentActivity: Array<{
@@ -118,6 +133,8 @@ export interface AdminEstablishmentDetailDto {
     at: string;
   }>;
   churnRisk: string | null;
+  mrrAtRisk: number;
+  churnReasons: string[];
   lastAccess: string | null;
 }
 
@@ -488,6 +505,7 @@ export interface EstablishmentDetailView {
   subscriptionStatus: string;
   nextBilling: string;
   mrr: number;
+  ltv: number;
   members: number;
   professionals: number;
   customers: number;
@@ -497,8 +515,20 @@ export interface EstablishmentDetailView {
   totalPaid: number;
   failedPayments: number;
   refunds: number;
+  delinquency: boolean;
+  delinquencyAmount: number;
+  services: number;
+  products: number;
+  campaigns: number;
+  sessions: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  activeDays: number;
   utilization: number;
   churnRisk: ChurnRisk | string | null;
+  mrrAtRisk: number;
+  churnReasons: string[];
   lastAccess: string;
   recentActivity: Array<{
     id: string;
