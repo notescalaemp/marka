@@ -170,6 +170,9 @@ model Establishment {
   slotEndHour          Int      @default(19)
   acceptsLocalPayment  Boolean  @default(true)
   acceptsOnlinePayment Boolean  @default(false)
+  // Marketing attribution for acquisition analytics (admin). Default organic —
+  // never invent a paid channel. Establishments can be tagged later.
+  acquisitionChannel   String   @default("organic")
   createdAt DateTime              @default(now())
   updatedAt DateTime              @updatedAt
 
@@ -713,12 +716,17 @@ enum SupportTicketPriority {
 
 // Singleton platform settings row (id is always "default").
 model PlatformSettings {
-  id        String   @id @default("default")
-  brandName String   @default("marka.ia")
-  locale    String   @default("pt-BR")
-  features  Json
-  updatedAt DateTime @updatedAt
-  updatedById String?
+  id                     String   @id @default("default")
+  brandName              String   @default("marka.ia")
+  locale                 String   @default("pt-BR")
+  features               Json
+  // Monthly marketing spend used for CAC = spend / new establishments.
+  marketingSpendMonthly  Decimal  @default(0) @db.Decimal(12, 2)
+  // Payment processing fee % applied to paid volume for finance margin/taxas.
+  paymentFeePercent      Decimal  @default(0) @db.Decimal(5, 2)
+  note                   String   @default("")
+  updatedAt              DateTime @updatedAt
+  updatedById            String?
 
   @@map("platform_settings")
 }

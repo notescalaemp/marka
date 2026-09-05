@@ -12,8 +12,6 @@ import type {
   AdminCustomerListItemDto,
   AdminCustomersKpisDto,
 } from "@/lib/api-types";
-import { useToast } from "@/components/Toast";
-
 const PAGE_SIZE = 20;
 
 const STATUS_FILTERS = [
@@ -36,7 +34,6 @@ export function CustomersPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>("all");
-  const toast = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,11 +80,6 @@ export function CustomersPage() {
       <PageHeader
         title="Customers"
         description="Consumidores finais do ecossistema marka.ia."
-        actions={
-          <Button size="sm" onClick={() => toast.show("Segmento criado (mock)")}>
-            Novo segmento
-          </Button>
-        }
       />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

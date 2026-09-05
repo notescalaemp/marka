@@ -71,8 +71,8 @@ export interface AdminEstablishmentListItemDto {
   lastAccess: string | null;
   professionals: number;
   customers: number;
-  utilization: number | null;
-  churnRisk: string;
+  utilization: number;
+  churnRisk: string | null;
 }
 
 export interface AdminEstablishmentListMeta {
@@ -96,6 +96,7 @@ export interface AdminEstablishmentDetailDto {
     canceledAt: string | null;
   } | null;
   mrr: number;
+  ltv: number;
   members: number;
   professionals: number;
   customers: number;
@@ -108,8 +109,22 @@ export interface AdminEstablishmentDetailDto {
     totalPaid: number;
     failedPayments: number;
     refunds: number;
+    delinquency: boolean;
+    delinquencyAmount: number;
   };
-  utilization: number | null;
+  catalog: {
+    services: number;
+    products: number;
+    campaigns: number;
+  };
+  engagement: {
+    sessions: number;
+    dau: number;
+    wau: number;
+    mau: number;
+    activeDays: number;
+  };
+  utilization: number;
   recentActivity: Array<{
     id: string;
     action: string;
@@ -117,7 +132,9 @@ export interface AdminEstablishmentDetailDto {
     targetType: string;
     at: string;
   }>;
-  churnRisk: string;
+  churnRisk: string | null;
+  mrrAtRisk: number;
+  churnReasons: string[];
   lastAccess: string | null;
 }
 
@@ -165,8 +182,8 @@ export interface EstablishmentListItemView {
   lastAccess: string;
   professionals: number;
   customers: number;
-  utilization: number | null;
-  churnRisk: ChurnRisk | string;
+  utilization: number;
+  churnRisk: ChurnRisk | string | null;
 }
 
 export interface AdminListMeta {
@@ -215,7 +232,7 @@ export interface AdminPlanListItemDto {
   upgradeRate: number;
   downgradeRate: number;
   trialToPaid: number;
-  ltv: number | null;
+  ltv: number;
 }
 
 export interface AdminPlanDetailDto {
@@ -281,7 +298,7 @@ export interface AdminFinanceBreakdownDto {
   recurring: number;
   nonRecurring: number;
   delinquency: number;
-  margin: number | null;
+  margin: number;
 }
 
 export interface AdminFinanceDto {
@@ -293,7 +310,7 @@ export interface AdminCustomersKpisDto {
   total: number;
   newThisMonth: number;
   bookings: number;
-  bookingConversion: number | null;
+  bookingConversion: number;
 }
 
 export interface AdminCustomerListItemDto {
@@ -326,8 +343,8 @@ export interface AdminChurnRiskListItemDto {
   mrr: number;
   riskScore: number;
   lastLogin: string | null;
-  utilization: number | null;
-  utilizationDelta: number | null;
+  utilization: number;
+  utilizationDelta: number;
   reasons: string[];
 }
 
@@ -401,7 +418,7 @@ export interface AdminAcquisitionDto {
   leads: number;
   signups: number;
   trialToPaid: number;
-  cac: number | null;
+  cac: number;
   funnel: AdminAcquisitionFunnelStepDto[];
   channels: AdminAcquisitionChannelDto[];
 }
@@ -437,8 +454,8 @@ export interface AdminProductUsageDto {
 export interface AdminChurnAnalyticsKpisDto {
   customerChurn: number;
   revenueChurn: number;
-  grr: number | null;
-  nrr: number | null;
+  grr: number;
+  nrr: number;
 }
 
 export interface AdminChurnBreakdownItemDto {
@@ -455,15 +472,17 @@ export interface AdminChurnAnalyticsDto {
 export interface AdminSettingsDto {
   brand: { name: string; locale: string };
   environment: string;
-  apiUrl: string | null;
-  cookieDomain: string | null;
+  apiUrl: string;
+  cookieDomain: string;
   features: {
     impersonation: boolean;
     auditLogs: boolean;
     marketingCampaigns: boolean;
     onlinePayments: boolean;
   };
-  note: string | null;
+  marketingSpendMonthly: number;
+  paymentFeePercent: number;
+  note: string;
 }
 
 export interface AdminImpersonateResponseDto {
@@ -486,6 +505,7 @@ export interface EstablishmentDetailView {
   subscriptionStatus: string;
   nextBilling: string;
   mrr: number;
+  ltv: number;
   members: number;
   professionals: number;
   customers: number;
@@ -495,8 +515,20 @@ export interface EstablishmentDetailView {
   totalPaid: number;
   failedPayments: number;
   refunds: number;
-  utilization: number | null;
-  churnRisk: ChurnRisk | string;
+  delinquency: boolean;
+  delinquencyAmount: number;
+  services: number;
+  products: number;
+  campaigns: number;
+  sessions: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  activeDays: number;
+  utilization: number;
+  churnRisk: ChurnRisk | string | null;
+  mrrAtRisk: number;
+  churnReasons: string[];
   lastAccess: string;
   recentActivity: Array<{
     id: string;

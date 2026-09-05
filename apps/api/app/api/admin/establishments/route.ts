@@ -4,6 +4,7 @@ import { withHandler, ok, parsePagination } from "@marka/shared";
 import { requireAdminAuth } from "@/lib/auth-context";
 import { requireAdminPermission } from "@/lib/admin";
 import { queryEstablishmentsList, type ScoredEstablishmentRow } from "@/lib/admin-establishments";
+import { queryUtilizationByIds } from "@/lib/admin-utilization";
 
 const filterSchema = z.object({
   search: z.string().trim().min(1).optional(),
@@ -12,7 +13,7 @@ const filterSchema = z.object({
   risk: z.enum(["low", "medium", "high"]).optional(),
 });
 
-function mapRow(row: ScoredEstablishmentRow) {
+function mapRow(row: ScoredEstablishmentRow, utilization: number) {
   return {
     id: row.id,
     name: row.name,
@@ -24,9 +25,7 @@ function mapRow(row: ScoredEstablishmentRow) {
     lastAccess: row.last_access ? row.last_access.toISOString() : null,
     professionals: row.professionals_count,
     customers: row.customers_count,
-    // No real capacity/availability model exists yet to compute a true
-    // utilization rate — see STATUS report. null, not a fabricated 0%.
-    utilization: null,
+    utilization,
     churnRisk: row.churn_risk,
   };
 }
@@ -45,6 +44,10 @@ export const GET = withHandler(async (req: NextRequest) => {
 
   const { skip, take, page, pageSize } = parsePagination(sp);
   const { items, total } = await queryEstablishmentsList(filters, skip, take);
+  const utilization = await queryUtilizationByIds(items.map((r) => r.id));
 
-  return ok(items.map(mapRow), { page, pageSize, total });
+  return ok(
+    items.map((row) => mapRow(row, utilization.get(row.id)?.utilization ?? 0)),
+    { page, pageSize, total }
+  );
 });

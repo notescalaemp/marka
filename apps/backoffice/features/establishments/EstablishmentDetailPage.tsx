@@ -117,7 +117,7 @@ export function EstablishmentDetailPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
             ["MRR", formatPrice(data.mrr)],
-            ["LTV", "—"],
+            ["LTV", formatPrice(data.ltv)],
             ["Plano", data.plan],
             ["Status", data.status],
             ["Assinatura", data.subscriptionStatus],
@@ -150,15 +150,11 @@ export function EstablishmentDetailPage() {
             ["Cancelados", formatNumber(data.appointmentsCanceled)],
             ["Clientes", formatNumber(data.customers)],
             ["Profissionais", formatNumber(data.professionals)],
-            [
-              "Utilização",
-              data.utilization == null ? "—" : `${data.utilization}%`,
-            ],
-            ["Serviços", "—"],
-            ["Produtos", "—"],
-            ["Campanhas", "—"],
-            ["marka AI", "—"],
-            ["Sessões", "—"],
+            ["Utilização", `${data.utilization}%`],
+            ["Serviços", formatNumber(data.services)],
+            ["Produtos", formatNumber(data.products)],
+            ["Campanhas", formatNumber(data.campaigns)],
+            ["Sessões (30d)", formatNumber(data.sessions)],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -176,11 +172,11 @@ export function EstablishmentDetailPage() {
       body: (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            ["DAU", "—"],
-            ["WAU", "—"],
-            ["MAU", "—"],
-            ["Dias ativos", "—"],
-            ["Sessões", "—"],
+            ["DAU", formatNumber(data.dau)],
+            ["WAU", formatNumber(data.wau)],
+            ["MAU", formatNumber(data.mau)],
+            ["Dias ativos", formatNumber(data.activeDays)],
+            ["Sessões (30d)", formatNumber(data.sessions)],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -201,7 +197,12 @@ export function EstablishmentDetailPage() {
             ["Total pago", formatPrice(data.totalPaid)],
             ["Pagamentos falhos", formatNumber(data.failedPayments)],
             ["Reembolsos", formatNumber(data.refunds)],
-            ["Inadimplência", "—"],
+            [
+              "Inadimplência",
+              data.delinquency
+                ? formatPrice(data.delinquencyAmount)
+                : "Em dia",
+            ],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -222,17 +223,25 @@ export function EstablishmentDetailPage() {
             <div className="rounded-md border border-marka-graphite/10 px-3 py-2">
               <p className="text-xs text-marka-gray">Churn risk</p>
               <p className="mt-0.5 text-sm font-medium capitalize">
-                {data.churnRisk}
+                {data.churnRisk ?? "—"}
               </p>
             </div>
             <div className="rounded-md border border-marka-graphite/10 px-3 py-2">
               <p className="text-xs text-marka-gray">MRR at risk</p>
-              <p className="mt-0.5 text-sm font-medium">—</p>
+              <p className="mt-0.5 text-sm font-medium">
+                {formatPrice(data.mrrAtRisk)}
+              </p>
             </div>
           </div>
-          <p className="text-sm text-marka-gray">
-            Motivos de risco detalhados ainda não disponíveis na API.
-          </p>
+          {data.churnReasons.length === 0 ? (
+            <p className="text-sm text-marka-gray">Sem sinais de risco ativos.</p>
+          ) : (
+            <ul className="list-inside list-disc text-sm text-marka-graphite">
+              {data.churnReasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          )}
         </div>
       ),
     },
@@ -295,7 +304,7 @@ export function EstablishmentDetailPage() {
       <div className="flex gap-2">
         <StatusBadge status={data.status} />
         <span className="text-xs text-marka-gray">
-          Churn risk: {data.churnRisk}
+          Churn risk: {data.churnRisk ?? "—"}
         </span>
       </div>
 

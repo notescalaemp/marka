@@ -25,7 +25,7 @@ const STATUS_FILTERS: Array<"all" | EstablishmentStatus> = [
   "canceled",
 ];
 
-function riskLabel(risk: ChurnRisk | string) {
+function riskLabel(risk: ChurnRisk | string | null) {
   switch (risk) {
     case "high":
       return "High risk";
