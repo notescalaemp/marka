@@ -150,3 +150,53 @@ export async function queryMrrAtRisk(): Promise<number> {
   `);
   return rows[0]?.total ?? 0;
 }
+
+export async function queryScoredAtRiskList(
+  skip: number,
+  take: number
+): Promise<{ items: ScoredEstablishmentRow[]; total: number }> {
+  const where = Prisma.sql`WHERE churn_risk IS NOT NULL`;
+
+  const [items, countRows] = await Promise.all([
+    db.$queryRaw<ScoredEstablishmentRow[]>(Prisma.sql`
+      ${SCORED_CTE}
+      SELECT * FROM scored ${where}
+      ORDER BY
+        CASE churn_risk WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+        mrr DESC
+      LIMIT ${take} OFFSET ${skip}
+    `),
+    db.$queryRaw<{ count: number }[]>(Prisma.sql`
+      ${SCORED_CTE}
+      SELECT COUNT(*)::int AS count FROM scored ${where}
+    `),
+  ]);
+
+  return { items, total: countRows[0]?.count ?? 0 };
+}
+
+export async function queryChurnRiskCounts(): Promise<{
+  high: number;
+  medium: number;
+  customersAtRisk: number;
+  mrrAtRisk: number;
+}> {
+  const rows = await db.$queryRaw<{ churn_risk: string; count: number; mrr: number }[]>(Prisma.sql`
+    ${SCORED_CTE}
+    SELECT churn_risk, COUNT(*)::int AS count, COALESCE(SUM(mrr), 0)::float8 AS mrr
+    FROM scored
+    WHERE churn_risk IN ('high', 'medium')
+    GROUP BY churn_risk
+  `);
+
+  let high = 0;
+  let medium = 0;
+  let mrrAtRisk = 0;
+  for (const row of rows) {
+    if (row.churn_risk === "high") high = row.count;
+    if (row.churn_risk === "medium") medium = row.count;
+    mrrAtRisk += row.mrr;
+  }
+
+  return { high, medium, customersAtRisk: high + medium, mrrAtRisk };
+}
