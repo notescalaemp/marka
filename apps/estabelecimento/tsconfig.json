@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@marka/ui/cn": ["../../packages/ui/src/utils.ts"],
+      "@marka/ui/button": ["../../packages/ui/src/components/Button.tsx"],
+      "@marka/ui/input": ["../../packages/ui/src/components/Input.tsx"],
+      "@marka/ui/label": ["../../packages/ui/src/components/Label.tsx"],
+      "@marka/ui/badge": ["../../packages/ui/src/components/Badge.tsx"],
+      "@marka/ui/card": ["../../packages/ui/src/components/Card.tsx"],
+      "@marka/ui/skeleton": ["../../packages/ui/src/components/Skeleton.tsx"],
+      "@marka/ui/empty": ["../../packages/ui/src/components/EmptyState.tsx"],
+      "@marka/ui/star": ["../../packages/ui/src/components/StarRating.tsx"],
+      "@marka/ui/toast": ["../../packages/ui/src/components/Toast.tsx"],
+      "@marka/ui/insight": ["../../packages/ui/src/components/InsightCard.tsx"],
+      "@marka/ui/badge-status": ["../../packages/ui/src/components/StatusBadge.tsx"],
+      "@marka/ui/page-header": ["../../packages/ui/src/components/PageHeader.tsx"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

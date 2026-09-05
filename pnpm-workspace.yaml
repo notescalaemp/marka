@@ -1,0 +1,9 @@
+packages:
+  - packages/ui
+  - packages/db
+  - packages/auth
+  - packages/shared
+  - apps/consumer
+  - apps/backoffice
+  - apps/estabelecimento
+  - apps/api

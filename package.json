@@ -1,0 +1,15 @@
+{
+  "name": "marka",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm --prefix apps/consumer run dev",
+    "dev:est": "npm --prefix apps/estabelecimento run dev",
+    "dev:backoffice": "npm --prefix apps/backoffice run dev",
+    "build": "npm --prefix apps/consumer run build && npm --prefix apps/estabelecimento run build",
+    "start": "npm --prefix apps/consumer start"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "marka-ui",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json",
+    "./cn": "./src/utils.ts",
+    "./button": "./src/components/Button.tsx",
+    "./input": "./src/components/Input.tsx",
+    "./label": "./src/components/Label.tsx",
+    "./badge": "./src/components/Badge.tsx",
+    "./card": "./src/components/Card.tsx",
+    "./skeleton": "./src/components/Skeleton.tsx",
+    "./empty": "./src/components/EmptyState.tsx",
+    "./star": "./src/components/StarRating.tsx",
+    "./toast": "./src/components/Toast.tsx",
+    "./insight": "./src/components/InsightCard.tsx",
+    "./badge-status": "./src/components/StatusBadge.tsx",
+    "./page-header": "./src/components/PageHeader.tsx"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.460.0",
+    "tailwind-merge": "^2.5.2"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  }
+}

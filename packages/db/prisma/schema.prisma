@@ -1,0 +1,662 @@
+// marka.ia — Prisma schema
+// Multi-tenant model: every business-owned record carries an explicit
+// establishmentId. Application code must always filter by it — see
+// packages/shared/src/tenant docs and apps/api/lib/tenant.ts for the
+// server-side guard that enforces this on every request.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+// Shared identity for the Consumer and Business apps. A single person can be
+// a customer of one salon and the owner of another — permissions are always
+// derived per-establishment via EstablishmentMember, never from this table.
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  phone             String?
+  passwordHash      String
+  name              String
+  emailVerifiedAt   DateTime?
+  status            UserStatus @default(ACTIVE)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sessions          Session[]
+  memberships       EstablishmentMember[]
+  customerProfiles  Customer[]
+  favoriteEstablishments FavoriteEstablishment[]
+  favoriteProfessionals  FavoriteProfessional[]
+  passwordResets    PasswordResetToken[]
+  emailVerifications EmailVerificationToken[]
+
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+// Backoffice identity. Deliberately separate from User: no public
+// registration endpoint, no crossover with Consumer/Business permissions.
+model Administrator {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         AdminRole
+  status       AdminStatus   @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sessions     AdminSession[]
+
+  @@map("administrators")
+}
+
+enum AdminStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+// Matches apps/backoffice/lib/types.ts Role exactly.
+enum AdminRole {
+  super_admin
+  finance
+  support
+  operations
+  product
+  read_only
+}
+
+// Opaque token stored as a SHA-256 hash; only the raw token ever leaves the
+// server (in the cookie). Losing the DB does not leak live sessions.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model AdminSession {
+  id              String   @id @default(cuid())
+  administratorId String
+  tokenHash       String   @unique
+  userAgent       String?
+  ip              String?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  administrator Administrator @relation(fields: [administratorId], references: [id], onDelete: Cascade)
+
+  @@index([administratorId])
+  @@map("admin_sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Tenant
+// ---------------------------------------------------------------------------
+
+model Establishment {
+  id        String                @id @default(cuid())
+  name      String
+  slug      String                @unique
+  document  String?
+  category  EstablishmentCategory
+  status    EstablishmentStatus   @default(trial)
+  timezone  String                @default("America/Sao_Paulo")
+  phone     String?
+  city      String?
+  state     String?
+  address   String?
+  // Public Consumer-facing fields — null/empty means "not configured", never invented.
+  description          String?
+  photoUrls            String[] @default([])
+  hoursText            String?
+  // Used only for slot generation when hoursText alone is not enough to parse.
+  // Defaults match a typical beauty-business day; establishments can change them.
+  slotStartHour        Int      @default(9)
+  slotEndHour          Int      @default(19)
+  acceptsLocalPayment  Boolean  @default(true)
+  acceptsOnlinePayment Boolean  @default(false)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  members            EstablishmentMember[]
+  memberInvites      MemberInvite[]
+  ownershipTransfers OwnershipTransfer[]
+  professionals      Professional[]
+  services      Service[]
+  customers     Customer[]
+  appointments  Appointment[]
+  payments      Payment[]
+  products      Product[]
+  stockMovements StockMovement[]
+  campaigns     Campaign[]
+  subscription  Subscription?
+  auditLogs     AuditLog[]
+  favoritedBy   FavoriteEstablishment[]
+
+  @@map("establishments")
+}
+
+// Matches apps/consumer + apps/estabelecimento CategoryId exactly.
+enum EstablishmentCategory {
+  nails
+  barbearia
+  lash_designer @map("lash-designer")
+}
+
+// Matches apps/backoffice/lib/types.ts EstablishmentStatus exactly.
+enum EstablishmentStatus {
+  trial
+  active
+  inactive
+  suspended
+  canceled
+}
+
+// The tenant-membership join: this is the single source of truth for "who
+// can act on this establishment, with what role". Every authorization check
+// in apps/api goes through this table — never trust an establishmentId
+// supplied by the client without verifying membership here first.
+model EstablishmentMember {
+  id              String            @id @default(cuid())
+  establishmentId String
+  userId          String
+  role            BusinessRole
+  status          MemberStatus      @default(ACTIVE)
+  invitedAt       DateTime          @default(now())
+  joinedAt        DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professional  Professional?
+
+  @@unique([establishmentId, userId])
+  @@index([userId])
+  @@map("establishment_members")
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+// An invite exists independently of EstablishmentMember because the invited
+// person may not have a User account yet (userId can't be known up front).
+// It only turns into an EstablishmentMember row at accept time, once we
+// know the userId — see apps/api/app/api/auth/invite/accept.
+model MemberInvite {
+  id              String       @id @default(cuid())
+  establishmentId String
+  email           String
+  role            BusinessRole
+  tokenHash       String       @unique
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime     @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@index([establishmentId])
+  @@index([email])
+  @@map("member_invites")
+}
+
+// Matches apps/estabelecimento/lib/types.ts Role exactly.
+enum BusinessRole {
+  OWNER
+  ADMIN
+  MANAGER
+  PROFESSIONAL
+  STAFF
+}
+
+// Deliberately not modeled on MemberInvite: both sides are already existing
+// EstablishmentMember rows (no email/account-creation step), and the role
+// this grants is fixed (OWNER) rather than caller-supplied — reusing
+// MemberInvite would mean allowing role: OWNER through the generic invite
+// path, which is exactly what must never happen. At most one live transfer
+// per establishment — see apps/api/app/api/business/[establishmentId]/
+// ownership/transfer, which revokes any previous pending one on a new call.
+model OwnershipTransfer {
+  id              String    @id @default(cuid())
+  establishmentId String
+  fromMemberId    String
+  toMemberId      String
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@index([establishmentId])
+  @@map("ownership_transfers")
+}
+
+// ---------------------------------------------------------------------------
+// Catalog & scheduling
+// ---------------------------------------------------------------------------
+
+// Professional-specific profile, 1:1 with a member whose role is
+// PROFESSIONAL. Kept separate from EstablishmentMember so scheduling data
+// doesn't bloat the membership/auth table.
+model Professional {
+  id                String   @id @default(cuid())
+  establishmentId   String
+  memberId          String   @unique
+  bio               String?
+  photoUrl          String?
+  specialties       String[]
+  commissionPercent Decimal  @default(0) @db.Decimal(5, 2)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  member        EstablishmentMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  services      ProfessionalService[]
+  appointments  Appointment[]
+  favoritedBy   FavoriteProfessional[]
+
+  @@index([establishmentId])
+  @@map("professionals")
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  establishmentId String
+  name            String
+  description     String?
+  durationMinutes Int
+  price           Decimal  @db.Decimal(10, 2)
+  category        String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  professionals ProfessionalService[]
+  appointments  Appointment[]
+
+  @@index([establishmentId])
+  @@map("services")
+}
+
+model ProfessionalService {
+  professionalId String
+  serviceId      String
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, serviceId])
+  @@map("professional_services")
+}
+
+// Tenant-scoped CRM record. May optionally link to a Consumer-app User
+// account (userId); the two identities are intentionally decoupled since a
+// walk-in customer may never create an account.
+model Customer {
+  id              String   @id @default(cuid())
+  establishmentId String
+  userId          String?
+  name            String
+  phone           String?
+  email           String?
+  notes           String?
+  tags            String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments  Appointment[]
+  payments      Payment[]
+
+  // One CRM profile per (establishment, user) when the customer has an account.
+  // Walk-ins keep userId null — Postgres allows multiple NULLs in a unique pair.
+  @@unique([establishmentId, userId])
+  @@index([establishmentId])
+  @@index([userId])
+  @@map("customers")
+}
+
+// ---------------------------------------------------------------------------
+// Consumer favorites — separate tables so uniqueness is exact (no nullable
+// unique columns) and establishment vs professional cannot be mixed in one row.
+// ---------------------------------------------------------------------------
+
+model FavoriteEstablishment {
+  userId          String
+  establishmentId String
+  createdAt       DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, establishmentId])
+  @@index([establishmentId])
+  @@map("favorite_establishments")
+}
+
+model FavoriteProfessional {
+  userId         String
+  professionalId String
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@id([userId, professionalId])
+  @@index([professionalId])
+  @@map("favorite_professionals")
+}
+
+model Appointment {
+  id              String            @id @default(cuid())
+  establishmentId String
+  customerId      String
+  professionalId  String
+  serviceId       String
+  startAt         DateTime
+  endAt           DateTime
+  status          AppointmentStatus @default(AGUARDANDO)
+  price           Decimal           @db.Decimal(10, 2)
+  notes           String?
+  createdByUserId String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  professional  Professional  @relation(fields: [professionalId], references: [id], onDelete: Restrict)
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  payments      Payment[]
+
+  @@index([establishmentId, startAt])
+  @@index([professionalId, startAt])
+  @@map("appointments")
+}
+
+// Business-side operational vocabulary — matches
+// apps/estabelecimento/lib/types.ts AppointmentStatus. The Consumer app uses
+// a simplified BookingStatus for its own UI; apps/api maps between the two
+// in the JSON response, the DB keeps a single canonical status.
+enum AppointmentStatus {
+  AGUARDANDO
+  CONFIRMADO
+  CONCLUIDO
+  CANCELADO
+  NO_SHOW
+  BLOQUEADO
+}
+
+// ---------------------------------------------------------------------------
+// Payments — deliberately decoupled from any single gateway. `provider` is
+// what differs per integration; `method`/`status` are gateway-agnostic.
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id              String          @id @default(cuid())
+  establishmentId String
+  appointmentId   String?
+  customerId      String?
+  amount          Decimal         @db.Decimal(10, 2)
+  currency        String          @default("BRL")
+  method          PaymentMethod
+  provider        PaymentProvider @default(MANUAL)
+  providerRef     String?
+  status          PaymentStatus   @default(PENDING)
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  appointment   Appointment?  @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([establishmentId])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+  CASH
+  OTHER
+}
+
+enum PaymentProvider {
+  MANUAL
+  STRIPE
+  MERCADO_PAGO
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+// ---------------------------------------------------------------------------
+// Products & stock — stock is an append-only ledger (StockMovement); current
+// stock is a cached counter on Product updated transactionally by the ledger
+// write, so the number displayed is fast to read but always reconstructable.
+// ---------------------------------------------------------------------------
+
+model Product {
+  id              String   @id @default(cuid())
+  establishmentId String
+  name            String
+  sku             String?
+  unit            String   @default("un")
+  costPrice       Decimal  @default(0) @db.Decimal(10, 2)
+  price           Decimal  @default(0) @db.Decimal(10, 2)
+  minStock        Int      @default(0)
+  currentStock    Int      @default(0)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  establishment  Establishment   @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  stockMovements StockMovement[]
+
+  @@index([establishmentId])
+  @@map("products")
+}
+
+model StockMovement {
+  id              String       @id @default(cuid())
+  establishmentId String
+  productId       String
+  type            StockMoveType
+  quantity        Int
+  reason          String?
+  createdByUserId String?
+  createdAt       DateTime     @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([establishmentId])
+  @@index([productId])
+  @@map("stock_movements")
+}
+
+enum StockMoveType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+// ---------------------------------------------------------------------------
+// Marketing (MVP placeholder — no send integration yet)
+// ---------------------------------------------------------------------------
+
+model Campaign {
+  id              String         @id @default(cuid())
+  establishmentId String
+  name            String
+  channel         CampaignChannel
+  status          CampaignStatus @default(DRAFT)
+  audience        Json?
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@index([establishmentId])
+  @@map("campaigns")
+}
+
+enum CampaignChannel {
+  EMAIL
+  WHATSAPP
+  PUSH
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELED
+}
+
+// ---------------------------------------------------------------------------
+// Platform billing — marka.ia's own subscription of an Establishment to a Plan.
+// ---------------------------------------------------------------------------
+
+model Plan {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  priceMonthly Decimal  @db.Decimal(10, 2)
+  features     Json?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  establishmentId   String             @unique
+  planId            String
+  status            SubscriptionStatus @default(TRIALING)
+  provider          String?
+  providerRef       String?
+  currentPeriodEnd  DateTime?
+  canceledAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  plan          Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id              String       @id @default(cuid())
+  actorType       AuditActorType
+  actorId         String?
+  establishmentId String?
+  action          String
+  targetType      String?
+  targetId        String?
+  metadata        Json?
+  ip              String?
+  userAgent       String?
+  createdAt       DateTime     @default(now())
+
+  establishment Establishment? @relation(fields: [establishmentId], references: [id], onDelete: SetNull)
+
+  @@index([establishmentId])
+  @@index([actorType, actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum AuditActorType {
+  USER
+  ADMINISTRATOR
+  SYSTEM
+}
