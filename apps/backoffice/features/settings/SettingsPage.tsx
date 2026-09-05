@@ -23,6 +23,9 @@ export function SettingsPage() {
   const [features, setFeatures] = useState<AdminSettingsDto["features"] | null>(
     null
   );
+  const [marketingSpendMonthly, setMarketingSpendMonthly] = useState(0);
+  const [paymentFeePercent, setPaymentFeePercent] = useState(0);
+  const [note, setNote] = useState("");
   const toast = useToast();
 
   const load = useCallback(async () => {
@@ -34,6 +37,9 @@ export function SettingsPage() {
       setBrandName(dto.brand.name);
       setLocale(dto.brand.locale);
       setFeatures({ ...dto.features });
+      setMarketingSpendMonthly(dto.marketingSpendMonthly);
+      setPaymentFeePercent(dto.paymentFeePercent);
+      setNote(dto.note);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar settings");
       setSettings(null);
@@ -54,11 +60,17 @@ export function SettingsPage() {
         brandName,
         locale,
         features,
+        marketingSpendMonthly,
+        paymentFeePercent,
+        note,
       });
       setSettings(updated);
       setBrandName(updated.brand.name);
       setLocale(updated.brand.locale);
       setFeatures({ ...updated.features });
+      setMarketingSpendMonthly(updated.marketingSpendMonthly);
+      setPaymentFeePercent(updated.paymentFeePercent);
+      setNote(updated.note);
       toast.show("Settings salvos");
     } catch (err) {
       toast.show(
@@ -74,6 +86,9 @@ export function SettingsPage() {
     setBrandName(settings.brand.name);
     setLocale(settings.brand.locale);
     setFeatures({ ...settings.features });
+    setMarketingSpendMonthly(settings.marketingSpendMonthly);
+    setPaymentFeePercent(settings.paymentFeePercent);
+    setNote(settings.note);
   }
 
   if (loading) {
@@ -158,6 +173,46 @@ export function SettingsPage() {
                     readOnly
                   />
                 </label>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">
+                    Spend de marketing mensal (CAC)
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                    value={marketingSpendMonthly}
+                    onChange={(e) =>
+                      setMarketingSpendMonthly(Number(e.target.value) || 0)
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">
+                    Taxa de pagamento (%)
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                    value={paymentFeePercent}
+                    onChange={(e) =>
+                      setPaymentFeePercent(Number(e.target.value) || 0)
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">Nota interna</span>
+                  <textarea
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                    rows={3}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                </label>
               </>
             ) : null}
 
@@ -189,7 +244,7 @@ export function SettingsPage() {
                   <span className="text-xs text-marka-gray">API URL</span>
                   <input
                     className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
-                    value={settings.apiUrl ?? "—"}
+                    value={settings.apiUrl || "—"}
                     readOnly
                   />
                 </label>
@@ -197,7 +252,7 @@ export function SettingsPage() {
                   <span className="text-xs text-marka-gray">Cookie domain</span>
                   <input
                     className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
-                    value={settings.cookieDomain ?? "—"}
+                    value={settings.cookieDomain || "—"}
                     readOnly
                   />
                 </label>

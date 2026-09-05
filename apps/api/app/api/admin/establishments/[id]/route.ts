@@ -4,6 +4,7 @@ import { withHandler, ok, NotFoundError } from "@marka/shared";
 import { requireAdminAuth } from "@/lib/auth-context";
 import { requireAdminPermission } from "@/lib/admin";
 import { queryEstablishmentScored } from "@/lib/admin-establishments";
+import { queryUtilizationForOne } from "@/lib/admin-utilization";
 
 export const GET = withHandler(async (req: NextRequest, { params }) => {
   const { id } = await params;
@@ -14,7 +15,7 @@ export const GET = withHandler(async (req: NextRequest, { params }) => {
   if (!scored) throw new NotFoundError("Estabelecimento não encontrado");
 
   // Real aggregates, each a single query — no per-row fan-out.
-  const [appointmentsByStatus, revenueByStatus, recentActivity] = await Promise.all([
+  const [appointmentsByStatus, revenueByStatus, recentActivity, util] = await Promise.all([
     db.appointment.groupBy({ by: ["status"], where: { establishmentId: id }, _count: { _all: true } }),
     db.payment.groupBy({
       by: ["status"],
@@ -28,6 +29,7 @@ export const GET = withHandler(async (req: NextRequest, { params }) => {
       take: 10,
       select: { id: true, action: true, actorType: true, targetType: true, createdAt: true },
     }),
+      queryUtilizationForOne(id),
   ]);
 
   const appointmentCounts = Object.fromEntries(appointmentsByStatus.map((r) => [r.status, r._count._all]));
@@ -65,8 +67,7 @@ export const GET = withHandler(async (req: NextRequest, { params }) => {
       failedPayments,
       refunds,
     },
-    // No real capacity/availability model exists yet — see STATUS report.
-    utilization: null,
+    utilization: util.utilization,
     recentActivity: recentActivity.map((a) => ({
       id: a.id,
       action: a.action,

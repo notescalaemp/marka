@@ -11,6 +11,7 @@ import {
   queryScoredAtRiskList,
   type ScoredEstablishmentRow,
 } from "./admin-establishments";
+import { queryUtilizationByIds } from "./admin-utilization";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_AGO = () => new Date(Date.now() - 30 * DAY_MS);
@@ -273,9 +274,14 @@ export async function queryPlansList() {
         upgradeRate: 0,
         downgradeRate: 0,
         trialToPaid,
-        // Classic SaaS approximation: ARPU / monthly churn. Null when churn is 0
-        // (no lifetime observed yet) so we never invent an infinite LTV.
-        ltv: churn > 0 ? Math.round((arpu / (churn / 100)) * 100) / 100 : null,
+        // Classic SaaS: ARPU / monthly churn. When churn is 0 (no cancels
+        // observed), use a finite 12-month horizon instead of inventing ∞.
+        ltv:
+          arpu <= 0
+            ? 0
+            : churn > 0
+              ? Math.round((arpu / (churn / 100)) * 100) / 100
+              : Math.round(arpu * 12 * 100) / 100,
       };
     })
   );
@@ -454,7 +460,7 @@ export async function queryFinanceMetrics(period: "7d" | "30d" | "90d") {
   const mrr = await getGlobalMrr();
   const arr = mrr * 12;
 
-  const [paidAgg, refundedAgg, pastDue] = await Promise.all([
+  const [paidAgg, refundedAgg, pastDue, settings] = await Promise.all([
     db.payment.aggregate({
       where: { status: "PAID", createdAt: { gte: since } },
       _sum: { amount: true },
@@ -464,21 +470,25 @@ export async function queryFinanceMetrics(period: "7d" | "30d" | "90d") {
       _sum: { amount: true },
     }),
     db.subscription.count({ where: { status: "PAST_DUE" } }),
+    ensurePlatformSettings(),
   ]);
 
   const receita = Number(paidAgg._sum.amount ?? 0);
   const refunds = Number(refundedAgg._sum.amount ?? 0);
+  const feePercent = Number(settings.paymentFeePercent);
+  const taxas = Math.round(receita * (feePercent / 100) * 100) / 100;
+  const receitaLiquida = Math.round((receita - taxas) * 100) / 100;
+  const margin = receita > 0 ? Math.round(((receitaLiquida / receita) * 100) * 10) / 10 : 100;
 
-  // No fee ledger exists — receita líquida equals gross receita in this model.
   const metrics = [
     { label: "Receita", value: formatBrl(receita), delta: 0 },
-    { label: "Receita líquida", value: formatBrl(receita), delta: 0 },
+    { label: "Receita líquida", value: formatBrl(receitaLiquida), delta: 0 },
     { label: "MRR", value: formatBrl(mrr), delta: 0 },
     { label: "ARR", value: formatBrl(arr), delta: 0 },
-    { label: "Taxas", value: "—", delta: undefined },
+    { label: "Taxas", value: formatBrl(taxas), delta: 0 },
     { label: "Refunds", value: formatBrl(refunds), delta: 0 },
     { label: "Recorrente", value: formatBrl(mrr), delta: 0 },
-    { label: "Margem", value: "—", delta: undefined },
+    { label: "Margem", value: `${margin}%`, delta: 0 },
   ];
 
   return {
@@ -487,7 +497,7 @@ export async function queryFinanceMetrics(period: "7d" | "30d" | "90d") {
       recurring: mrr,
       nonRecurring: receita,
       delinquency: pastDue,
-      margin: null,
+      margin,
     },
   };
 }
@@ -581,12 +591,16 @@ export async function queryCustomersList(filters: CustomersListFilters, skip: nu
 
 export async function getCustomersKpis() {
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  const [total, newThisMonth, bookings] = await Promise.all([
+  const [total, newThisMonth, bookings, withBooking] = await Promise.all([
     db.customer.count(),
     db.customer.count({ where: { createdAt: { gte: monthStart } } }),
     db.appointment.count(),
+    db.customer.count({ where: { appointments: { some: {} } } }),
   ]);
-  return { total, newThisMonth, bookings, bookingConversion: null };
+  // Share of customers who have at least one appointment.
+  const bookingConversion =
+    total > 0 ? Math.round((withBooking / total) * 1000) / 10 : 0;
+  return { total, newThisMonth, bookings, bookingConversion };
 }
 
 // ---------------------------------------------------------------------------
@@ -611,18 +625,22 @@ function buildChurnReasons(row: ScoredEstablishmentRow): string[] {
 
 export async function queryChurnRiskList(skip: number, take: number) {
   const { items, total } = await queryScoredAtRiskList(skip, take);
+  const utilization = await queryUtilizationByIds(items.map((r) => r.id));
 
-  const mapped = items.map((row) => ({
-    id: row.id,
-    establishment: row.name,
-    plan: row.plan_name ?? "—",
-    mrr: row.mrr,
-    riskScore: churnRiskScore(row.churn_risk) ?? 0,
-    lastLogin: row.last_access ? row.last_access.toISOString() : null,
-    utilization: null,
-    utilizationDelta: null,
-    reasons: buildChurnReasons(row),
-  }));
+  const mapped = items.map((row) => {
+    const util = utilization.get(row.id) ?? { utilization: 0, utilizationDelta: 0 };
+    return {
+      id: row.id,
+      establishment: row.name,
+      plan: row.plan_name ?? "—",
+      mrr: row.mrr,
+      riskScore: churnRiskScore(row.churn_risk) ?? 0,
+      lastLogin: row.last_access ? row.last_access.toISOString() : null,
+      utilization: util.utilization,
+      utilizationDelta: util.utilizationDelta,
+      reasons: buildChurnReasons(row),
+    };
+  });
 
   return { items: mapped, total };
 }
@@ -803,33 +821,59 @@ export async function queryAuditLogsList(filters: AuditLogsFilters, skip: number
 // Analytics — acquisition
 // ---------------------------------------------------------------------------
 
+const CHANNEL_LABELS: Record<string, string> = {
+  organic: "Orgânico",
+  paid: "Pago",
+  referral: "Indicação",
+  partner: "Parceiro",
+  other: "Outro",
+};
+
 export async function queryAcquisitionAnalytics(period?: "7d" | "30d" | "90d") {
   const since = period ? periodStart(period) : undefined;
   const estWhere = since ? { createdAt: { gte: since } } : {};
   const userWhere = since ? { createdAt: { gte: since } } : {};
 
-  const [leads, signups, trialing, activePaid, trialToPaid] = await Promise.all([
-    db.establishment.count({ where: estWhere }),
-    db.user.count({ where: userWhere }),
-    db.subscription.count({ where: { status: "TRIALING" } }),
-    db.subscription.count({ where: { status: "ACTIVE" } }),
-    getTrialToPaid(),
-  ]);
+  const [leads, signups, trialing, activePaid, trialToPaid, settings, channelGroups] =
+    await Promise.all([
+      db.establishment.count({ where: estWhere }),
+      db.user.count({ where: userWhere }),
+      db.subscription.count({ where: { status: "TRIALING" } }),
+      db.subscription.count({ where: { status: "ACTIVE" } }),
+      getTrialToPaid(),
+      ensurePlatformSettings(),
+      db.establishment.groupBy({
+        by: ["acquisitionChannel"],
+        where: estWhere,
+        _count: { _all: true },
+      }),
+    ]);
+
+  const spend = Number(settings.marketingSpendMonthly);
+  // CAC = monthly marketing spend / new establishments in the window.
+  const cac = leads > 0 ? Math.round((spend / leads) * 100) / 100 : 0;
+
+  const channels =
+    leads > 0
+      ? channelGroups
+          .map((g) => ({
+            label: CHANNEL_LABELS[g.acquisitionChannel] ?? g.acquisitionChannel,
+            value: Math.round((g._count._all / leads) * 1000) / 10,
+          }))
+          .sort((a, b) => b.value - a.value)
+      : [];
 
   return {
     leads,
     signups,
     trialToPaid,
-    cac: null,
+    cac,
     funnel: [
       { label: "Estabelecimentos criados", value: leads },
       { label: "Trials (TRIALING)", value: trialing },
       { label: "Active paid (ACTIVE)", value: activePaid },
     ],
-    // No marketing attribution model exists. When there are real signups we
-    // surface a single honest "Não atribuído" bucket instead of inventing channels.
-    channels: leads > 0 ? [{ label: "Não atribuído", value: 100 }] : [],
-
+    channels,
   };
 }
 
@@ -966,10 +1010,10 @@ export async function queryChurnAnalytics() {
     kpis: {
       customerChurn,
       revenueChurn,
-      // Gross Retention ≈ 100 - revenue churn (no expansion tracked).
+      // Gross Retention ≈ 100 − revenue churn. With no expansion/upsell tracked,
+      // Net Retention equals GRR (expansion = 0 ⇒ NRR = GRR).
       grr: Math.max(0, Math.round((100 - revenueChurn) * 10) / 10),
-      // Net Retention needs expansion/upsell revenue history — not available.
-      nrr: null,
+      nrr: Math.max(0, Math.round((100 - revenueChurn) * 10) / 10),
     },
     breakdown,
     mrrAtRisk,
@@ -1128,20 +1172,36 @@ async function ensurePlatformSettings() {
       brandName: "marka.ia",
       locale: "pt-BR",
       features: DEFAULT_FEATURES,
+      marketingSpendMonthly: 0,
+      paymentFeePercent: 0,
+      note: "",
     },
   });
 }
 
-export async function querySettings() {
-  const row = await ensurePlatformSettings();
+function mapSettingsRow(row: {
+  brandName: string;
+  locale: string;
+  features: unknown;
+  marketingSpendMonthly: { toString(): string } | number;
+  paymentFeePercent: { toString(): string } | number;
+  note: string;
+}) {
   return {
     brand: { name: row.brandName, locale: row.locale },
     environment: process.env.NODE_ENV ?? "development",
-    apiUrl: process.env.NEXT_PUBLIC_API_URL ?? null,
-    cookieDomain: process.env.COOKIE_DOMAIN ?? null,
+    apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "",
+    cookieDomain: process.env.COOKIE_DOMAIN ?? "",
     features: parseFeatures(row.features),
-    note: null as string | null,
+    marketingSpendMonthly: Number(row.marketingSpendMonthly),
+    paymentFeePercent: Number(row.paymentFeePercent),
+    note: row.note ?? "",
   };
+}
+
+export async function querySettings() {
+  const row = await ensurePlatformSettings();
+  return mapSettingsRow(row);
 }
 
 export async function updateSettings(
@@ -1149,6 +1209,9 @@ export async function updateSettings(
     brandName?: string;
     locale?: string;
     features?: Partial<SettingsFeatures>;
+    marketingSpendMonthly?: number;
+    paymentFeePercent?: number;
+    note?: string;
   },
   updatedById: string
 ) {
@@ -1163,15 +1226,17 @@ export async function updateSettings(
       brandName: input.brandName?.trim() || current.brandName,
       locale: input.locale?.trim() || current.locale,
       features,
+      marketingSpendMonthly:
+        input.marketingSpendMonthly !== undefined
+          ? input.marketingSpendMonthly
+          : current.marketingSpendMonthly,
+      paymentFeePercent:
+        input.paymentFeePercent !== undefined
+          ? input.paymentFeePercent
+          : current.paymentFeePercent,
+      note: input.note !== undefined ? input.note : current.note,
       updatedById,
     },
   });
-  return {
-    brand: { name: row.brandName, locale: row.locale },
-    environment: process.env.NODE_ENV ?? "development",
-    apiUrl: process.env.NEXT_PUBLIC_API_URL ?? null,
-    cookieDomain: process.env.COOKIE_DOMAIN ?? null,
-    features: parseFeatures(row.features),
-    note: null as string | null,
-  };
+  return mapSettingsRow(row);
 }

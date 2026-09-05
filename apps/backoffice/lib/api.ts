@@ -375,6 +375,9 @@ export function updateAdminSettings(input: {
   brandName?: string;
   locale?: string;
   features?: Partial<AdminSettingsDto["features"]>;
+  marketingSpendMonthly?: number;
+  paymentFeePercent?: number;
+  note?: string;
 }) {
   return apiPatch<AdminSettingsDto>("/api/admin/settings", input);
 }

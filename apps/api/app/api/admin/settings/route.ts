@@ -17,6 +17,9 @@ const patchSchema = z.object({
       onlinePayments: z.boolean().optional(),
     })
     .optional(),
+  marketingSpendMonthly: z.number().min(0).max(1_000_000_000).optional(),
+  paymentFeePercent: z.number().min(0).max(100).optional(),
+  note: z.string().max(2000).optional(),
 });
 
 export const GET = withHandler(async (req: NextRequest) => {
