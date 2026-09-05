@@ -35,7 +35,7 @@ export function ImpersonationBanner() {
         confirmLabel="Sair"
         onConfirm={() => {
           setConfirmOpen(false);
-          exitImpersonation();
+          void exitImpersonation();
         }}
         onCancel={() => setConfirmOpen(false)}
       />

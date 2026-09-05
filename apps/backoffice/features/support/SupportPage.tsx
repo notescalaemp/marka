@@ -1,44 +1,55 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
-import { supportTickets } from "@/lib/mock-data";
-import { formatDateTime } from "@/lib/format";
+import { getAdminSupportTickets } from "@/lib/api";
+import type {
+  AdminSupportKpisDto,
+  AdminSupportTicketDto,
+} from "@/lib/api-types";
+import { formatDateTime, formatNumber } from "@/lib/format";
 
-const TYPE_FILTERS = [
-  "all",
-  "billing",
-  "technical",
-  "onboarding",
-] as const;
-const STATUS_FILTERS = [
-  "all",
-  "open",
-  "in_progress",
-  "resolved",
-] as const;
-const PRIORITY_FILTERS = [
-  "all",
-  "high",
-  "medium",
-  "low",
-] as const;
+const TYPE_FILTERS = ["all", "billing", "technical", "onboarding"] as const;
+const STATUS_FILTERS = ["all", "open", "in_progress", "resolved"] as const;
+const PRIORITY_FILTERS = ["all", "high", "medium", "low"] as const;
 
 export function SupportPage() {
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<AdminSupportTicketDto[]>([]);
+  const [kpis, setKpis] = useState<AdminSupportKpisDto | null>(null);
   const [type, setType] = useState<(typeof TYPE_FILTERS)[number]>("all");
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>("all");
-  const [priority, setPriority] = useState<(typeof PRIORITY_FILTERS)[number]>(
-    "all"
-  );
+  const [priority, setPriority] = useState<(typeof PRIORITY_FILTERS)[number]>("all");
   const [q, setQ] = useState("");
   const toast = useToast();
-  const [tickets, setTickets] = useState(supportTickets);
-  const [selected, setSelected] = useState(supportTickets[0]?.id ?? null);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAdminSupportTickets();
+      setTickets(data.items);
+      setKpis(data.kpis);
+      setSelected(data.items[0]?.id ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar tickets");
+      setTickets([]);
+      setKpis(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     return tickets.filter((t) => {
@@ -67,8 +78,17 @@ export function SupportPage() {
     );
   }
 
-  const openCount = tickets.filter((t) => t.status !== "resolved").length;
-  const highPriority = tickets.filter((t) => t.priority === "high").length;
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Support"
+          description="Central de suporte interno para contas e incidentes."
+        />
+        <ErrorState description={error} onRetry={() => void load()} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,17 +104,18 @@ export function SupportPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Tickets abertos", value: String(openCount) },
-          { label: "High priority", value: String(highPriority) },
+          { label: "Tickets abertos", value: kpis ? formatNumber(kpis.open) : "—" },
+          {
+            label: "High priority",
+            value: kpis ? formatNumber(kpis.highPriority) : "—",
+          },
           {
             label: "Resolved",
-            value: String(
-              tickets.filter((t) => t.status === "resolved").length
-            ),
+            value: kpis ? formatNumber(kpis.resolved) : "—",
           },
           {
             label: "Aberto",
-            value: String(tickets.filter((t) => t.status === "open").length),
+            value: kpis ? formatNumber(kpis.openOnly) : "—",
           },
         ].map((m) => (
           <div
@@ -229,39 +250,6 @@ export function SupportPage() {
               <div>
                 <p className="text-xs text-marka-gray">Status</p>
                 <p className="text-sm capitalize">{selectedTicket.status}</p>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setTickets((prev) =>
-                      prev.map((t) =>
-                        t.id === selectedTicket.id
-                          ? { ...t, status: "in_progress" }
-                          : t
-                      )
-                    );
-                    toast.show("Ticket em progresso");
-                  }}
-                >
-                  Marcar em progresso
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setTickets((prev) =>
-                      prev.map((t) =>
-                        t.id === selectedTicket.id
-                          ? { ...t, status: "resolved" }
-                          : t
-                      )
-                    );
-                    toast.show("Ticket resolvido");
-                  }}
-                >
-                  Resolver
-                </Button>
               </div>
             </div>
           )}

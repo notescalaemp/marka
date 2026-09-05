@@ -1,39 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ErrorState } from "@/components/ErrorState";
 import { Skeleton } from "@/components/Skeleton";
 import { formatPrice } from "@/lib/format";
-import { financeMetrics } from "@/lib/mock-data";
+import { getAdminFinance, type FinancePeriod } from "@/lib/api";
+import type { AdminFinanceDto } from "@/lib/api-types";
 
 const PERIODS = [
-  { id: "7d", label: "7 dias" },
-  { id: "30d", label: "30 dias" },
-  { id: "90d", label: "90 dias" },
-] as const;
+  { id: "7d" as const, label: "7 dias" },
+  { id: "30d" as const, label: "30 dias" },
+  { id: "90d" as const, label: "90 dias" },
+];
 
 export function FinancePage() {
-  const [loading] = useState(false);
-  const [period, setPeriod] = useState<(typeof PERIODS)[number]["id"]>("30d");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<FinancePeriod>("30d");
+  const [data, setData] = useState<AdminFinanceDto | null>(null);
 
-  const metrics = useMemo(
-    () =>
-      financeMetrics.map((m) => {
-        const delta = m.delta ?? 0;
-        return {
-          ...m,
-          value:
-            period === "7d"
-              ? m.value
-              : period === "90d"
-                ? m.value
-                : m.value,
-        };
-      }),
-    [period]
-  );
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const dto = await getAdminFinance(period);
+      setData(dto);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar finance");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [period]);
 
-  if (loading) {
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (loading && !data) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -41,6 +46,18 @@ export function FinancePage() {
       </div>
     );
   }
+
+  if (error && !data) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Finance" description="Visão financeira da marka.ia." />
+        <ErrorState description={error} onRetry={() => void load()} />
+      </div>
+    );
+  }
+
+  const metrics = data?.metrics ?? [];
+  const breakdown = data?.breakdown;
 
   return (
     <div className="space-y-6">
@@ -65,6 +82,10 @@ export function FinancePage() {
           </button>
         ))}
       </div>
+
+      {loading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m) => (
@@ -93,14 +114,24 @@ export function FinancePage() {
       </section>
 
       <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
-        <h2 className="text-sm font-medium text-marka-graphite">
-          Breakdown
-        </h2>
+        <h2 className="text-sm font-medium text-marka-graphite">Breakdown</h2>
         <ul className="mt-3 space-y-2 text-sm text-marka-graphite">
-          <li>Receita recorrente: {formatPrice(44100)}</li>
-          <li>Receita não recorrente: {formatPrice(4200)}</li>
-          <li>Inadimplência: {formatPrice(1280)}</li>
-          <li>Margem: 62%</li>
+          <li>
+            Receita recorrente:{" "}
+            {breakdown ? formatPrice(breakdown.recurring) : "—"}
+          </li>
+          <li>
+            Receita não recorrente:{" "}
+            {breakdown ? formatPrice(breakdown.nonRecurring) : "—"}
+          </li>
+          <li>
+            Inadimplência:{" "}
+            {breakdown ? String(breakdown.delinquency) : "—"}
+          </li>
+          <li>
+            Margem:{" "}
+            {breakdown?.margin == null ? "—" : `${breakdown.margin}%`}
+          </li>
         </ul>
       </div>
     </div>

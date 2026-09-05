@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
-import { alerts } from "@/lib/mock-data";
+import { getAdminAlerts } from "@/lib/api";
+import type { AdminAlertDto } from "@/lib/api-types";
 
 const SEVERITIES = [
   "all",
@@ -23,20 +25,49 @@ const TONE: Record<string, string> = {
 };
 
 export function AlertsPage() {
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<AdminAlertDto[]>([]);
   const [severity, setSeverity] = useState<(typeof SEVERITIES)[number]>("all");
   const toast = useToast();
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAdminAlerts();
+      setAlerts(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar alertas");
+      setAlerts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (severity === "all") return alerts;
     return alerts.filter((a) => a.severity === severity);
-  }, [severity]);
+  }, [alerts, severity]);
 
   if (loading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Alerts" description="Central de alertas da marka.ia." />
+        <ErrorState description={error} onRetry={() => void load()} />
       </div>
     );
   }

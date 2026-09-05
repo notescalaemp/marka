@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Role } from "./types";
-import { adminLogin, adminLogout, getAdminMe, ApiError, type Administrator } from "./api";
+import { adminLogin, adminLogout, getAdminMe, ApiError, startAdminImpersonation, endAdminImpersonation, type Administrator } from "./api";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -24,13 +24,11 @@ type StoreValue = {
   authError: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  // Impersonation stays local-only: POST/DELETE /api/admin/impersonate
-  // doesn't exist on the backend yet, so there is nothing real to call here.
-  // See STATUS report for this gap.
+  // Impersonation calls POST/DELETE /api/admin/impersonate when establishment id is available.
   impersonating: boolean;
   impersonatedName: string | null;
-  startImpersonation: (name: string) => void;
-  exitImpersonation: () => void;
+  startImpersonation: (target: { id: string; name: string }) => Promise<void>;
+  exitImpersonation: () => Promise<void>;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -84,14 +82,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const startImpersonation = useCallback((name: string) => {
-    setImpersonatedName(name);
+  const startImpersonation = useCallback(async (target: { id: string; name: string }) => {
+    await startAdminImpersonation(target.id);
+    setImpersonatedName(target.name);
     setImpersonating(true);
   }, []);
 
-  const exitImpersonation = useCallback(() => {
-    setImpersonating(false);
-    setImpersonatedName(null);
+  const exitImpersonation = useCallback(async () => {
+    try {
+      await endAdminImpersonation();
+    } finally {
+      setImpersonating(false);
+      setImpersonatedName(null);
+    }
   }, []);
 
   const value = useMemo(

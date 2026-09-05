@@ -1,24 +1,41 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/Skeleton";
+import { ErrorState } from "@/components/ErrorState";
 import { formatPrice } from "@/lib/format";
-import { churnBreakdown, churnRiskRows } from "@/lib/mock-data";
+import { getAdminChurnAnalytics } from "@/lib/api";
+import type { AdminChurnAnalyticsDto } from "@/lib/api-types";
+
+function formatChurnPct(value: number | null | undefined) {
+  if (value == null) return "—";
+  return `${value.toFixed(1).replace(".", ",")}%`;
+}
 
 export function ChurnPage() {
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<AdminChurnAnalyticsDto | null>(null);
   const [reason, setReason] = useState("all");
 
-  const metrics = useMemo(
-    () => [
-      { label: "Customer churn", value: "2,4%" },
-      { label: "Revenue churn", value: "1,8%" },
-      { label: "GRR", value: "97,6%" },
-      { label: "NRR", value: "98,1%" },
-    ],
-    []
-  );
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const dto = await getAdminChurnAnalytics();
+      setData(dto);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar churn");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (loading) {
     return (
@@ -29,7 +46,27 @@ export function ChurnPage() {
     );
   }
 
-  const mrrAtRisk = churnRiskRows.reduce((s, r) => s + r.mrr, 0);
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Churn"
+          description="Customer churn, revenue churn e GRR/NRR."
+        />
+        <ErrorState description={error} onRetry={() => void load()} />
+      </div>
+    );
+  }
+
+  const kpis = data?.kpis;
+  const breakdown = data?.breakdown ?? [];
+
+  const metrics = [
+    { label: "Customer churn", value: formatChurnPct(kpis?.customerChurn) },
+    { label: "Revenue churn", value: formatChurnPct(kpis?.revenueChurn) },
+    { label: "GRR", value: formatChurnPct(kpis?.grr) },
+    { label: "NRR", value: formatChurnPct(kpis?.nrr) },
+  ];
 
   return (
     <div className="space-y-6">
@@ -54,20 +91,24 @@ export function ChurnPage() {
         <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
           <h2 className="text-sm font-medium text-marka-graphite">Motivos</h2>
           <div className="mt-3 space-y-2">
-            {churnBreakdown.map((c) => (
-              <div key={c.reason}>
-                <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-                  <span>{c.reason}</span>
-                  <span>{c.share}%</span>
+            {breakdown.length === 0 ? (
+              <p className="text-sm text-marka-gray">Sem breakdown disponível.</p>
+            ) : (
+              breakdown.map((c) => (
+                <div key={c.reason}>
+                  <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+                    <span>{c.reason}</span>
+                    <span>{c.share}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-marka-off">
+                    <div
+                      className="h-full rounded-full bg-red-500"
+                      style={{ width: `${c.share}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-marka-off">
-                  <div
-                    className="h-full rounded-full bg-red-500"
-                    style={{ width: `${c.share}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -76,7 +117,7 @@ export function ChurnPage() {
             MRR at risk
           </h2>
           <p className="mt-2 text-lg font-semibold text-marka-black">
-            {formatPrice(mrrAtRisk)}
+            {data ? formatPrice(data.mrrAtRisk) : "—"}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {(["all", "high", "medium"] as const).map((r) => (
@@ -96,8 +137,8 @@ export function ChurnPage() {
           </div>
           <p className="mt-3 text-xs text-marka-gray">
             {reason === "all"
-              ? "Breakdown por plano e idade do cliente."
-              : "Filtro aplicado: alta/média prioridade."}
+              ? "Breakdown por plano e idade do cliente ainda não disponível na API."
+              : "Filtro aplicado: alta/média prioridade (sem breakdown adicional na API)."}
           </p>
         </div>
       </div>

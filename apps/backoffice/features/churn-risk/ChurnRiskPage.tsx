@@ -1,36 +1,77 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { Skeleton } from "@/components/Skeleton";
-import { formatPrice } from "@/lib/format";
-import { churnRiskRows } from "@/lib/mock-data";
+import { formatDateTime, formatNumber, formatPrice } from "@/lib/format";
+import { getAdminChurnRisk } from "@/lib/api";
+import type {
+  AdminChurnRiskKpisDto,
+  AdminChurnRiskListItemDto,
+} from "@/lib/api-types";
 import { useToast } from "@/components/Toast";
 import { useStore } from "@/lib/store";
 
+const PAGE_SIZE = 20;
+
+function matchesRiskFilter(
+  riskScore: number,
+  risk: "all" | "high" | "medium" | "low"
+) {
+  if (risk === "all") return true;
+  if (risk === "high") return riskScore >= 70;
+  if (risk === "medium") return riskScore >= 40 && riskScore < 70;
+  return riskScore < 40;
+}
+
 export function ChurnRiskPage() {
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<AdminChurnRiskListItemDto[]>([]);
+  const [kpis, setKpis] = useState<AdminChurnRiskKpisDto | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [risk, setRisk] = useState<"all" | "high" | "medium" | "low">("all");
   const toast = useToast();
   const { startImpersonation } = useStore();
 
-  const filtered = useMemo(() => {
-    if (risk === "all") return churnRiskRows;
-    return churnRiskRows.filter((r) => r.riskScore > (risk === "high" ? 70 : risk === "medium" ? 40 : 0));
-  }, [risk]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, meta } = await getAdminChurnRisk({
+        page,
+        pageSize: PAGE_SIZE,
+      });
+      setItems(data.items);
+      setKpis(data.kpis);
+      setTotal(Number(meta.total ?? 0));
+      setPageSize(Number(meta.pageSize ?? PAGE_SIZE));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar churn risk");
+      setItems([]);
+      setKpis(null);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  const highRiskMrr = churnRiskRows
-    .filter((r) => r.riskScore >= 70)
-    .reduce((s, r) => s + r.mrr, 0);
+  const filtered = useMemo(
+    () => items.filter((r) => matchesRiskFilter(r.riskScore, risk)),
+    [items, risk]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="space-y-6">
@@ -41,10 +82,16 @@ export function ChurnRiskPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "High risk", value: String(churnRiskRows.filter((r) => r.riskScore >= 70).length) },
-          { label: "Medium risk", value: String(churnRiskRows.filter((r) => r.riskScore >= 40 && r.riskScore < 70).length) },
-          { label: "Customers at risk", value: String(churnRiskRows.length) },
-          { label: "MRR at risk", value: formatPrice(highRiskMrr) },
+          { label: "High risk", value: kpis ? formatNumber(kpis.high) : "—" },
+          { label: "Medium risk", value: kpis ? formatNumber(kpis.medium) : "—" },
+          {
+            label: "Customers at risk",
+            value: kpis ? formatNumber(kpis.customersAtRisk) : "—",
+          },
+          {
+            label: "MRR at risk",
+            value: kpis ? formatPrice(kpis.mrrAtRisk) : "—",
+          },
         ].map((m) => (
           <div
             key={m.label}
@@ -74,71 +121,126 @@ export function ChurnRiskPage() {
           ))}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                <th className="px-2 py-2 font-medium">Estabelecimento</th>
-                <th className="px-2 py-2 font-medium">Plano</th>
-                <th className="px-2 py-2 font-medium">MRR</th>
-                <th className="px-2 py-2 font-medium">Risk score</th>
-                <th className="px-2 py-2 font-medium">Último login</th>
-                <th className="px-2 py-2 font-medium">Utilização</th>
-                <th className="px-2 py-2 font-medium">Δ Uso</th>
-                <th className="px-2 py-2 font-medium">Motivos</th>
-                <th className="px-2 py-2 font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+        {loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : error ? (
+          <ErrorState description={error} onRetry={() => void load()} />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            title="Nenhuma conta em risco"
+            description="Nenhum estabelecimento com esses filtros."
+          />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
+                    <th className="px-2 py-2 font-medium">Estabelecimento</th>
+                    <th className="px-2 py-2 font-medium">Plano</th>
+                    <th className="px-2 py-2 font-medium">MRR</th>
+                    <th className="px-2 py-2 font-medium">Risk score</th>
+                    <th className="px-2 py-2 font-medium">Último login</th>
+                    <th className="px-2 py-2 font-medium">Utilização</th>
+                    <th className="px-2 py-2 font-medium">Δ Uso</th>
+                    <th className="px-2 py-2 font-medium">Motivos</th>
+                    <th className="px-2 py-2 font-medium">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <tr
+                      key={r.id}
+                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                    >
+                      <td className="px-2 py-2 font-medium">{r.establishment}</td>
+                      <td className="px-2 py-2">{r.plan}</td>
+                      <td className="px-2 py-2">{formatPrice(r.mrr)}</td>
+                      <td className="px-2 py-2">{r.riskScore}</td>
+                      <td className="px-2 py-2 text-marka-gray">
+                        {r.lastLogin ? formatDateTime(r.lastLogin) : "—"}
+                      </td>
+                      <td className="px-2 py-2">
+                        {r.utilization == null ? "—" : `${r.utilization}%`}
+                      </td>
+                      <td className="px-2 py-2">
+                        {r.utilizationDelta == null
+                          ? "—"
+                          : `${r.utilizationDelta >= 0 ? "+" : ""}${r.utilizationDelta}%`}
+                      </td>
+                      <td className="px-2 py-2 text-marka-gray">
+                        {r.reasons.length ? r.reasons.join(", ") : "—"}
+                      </td>
+                      <td className="px-2 py-2">
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/establishments/${r.id}`}
+                            className="text-xs text-emerald-700 underline"
+                          >
+                            Visualizar
+                          </Link>
+                          <button
+                            type="button"
+                            className="text-xs text-marka-graphite underline"
+                            onClick={() => {
+                              void startImpersonation({
+                                id: r.id,
+                                name: r.establishment,
+                              }).then(() => {
+                                toast.show(`Impersonation de ${r.establishment}`);
+                              }).catch((err) => {
+                                toast.show(
+                                  err instanceof Error
+                                    ? err.message
+                                    : "Erro ao iniciar impersonation"
+                                );
+                              });
+                            }}
+                          >
+                            Acessar
+                          </button>
+                          <button
+                            type="button"
+                            className="text-xs text-emerald-700 underline"
+                          >
+                            Contato
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-marka-gray">
+                Página {page} de {totalPages} · {formatNumber(total)} no total
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
-                  <td className="px-2 py-2 font-medium">{r.establishment}</td>
-                  <td className="px-2 py-2">{r.plan}</td>
-                  <td className="px-2 py-2">{formatPrice(r.mrr)}</td>
-                  <td className="px-2 py-2">{r.riskScore}</td>
-                  <td className="px-2 py-2 text-marka-gray">{r.lastLogin}</td>
-                  <td className="px-2 py-2">{r.utilization}%</td>
-                  <td className="px-2 py-2">
-                    {r.utilizationDelta >= 0 ? "+" : ""}
-                    {r.utilizationDelta}%
-                  </td>
-                  <td className="px-2 py-2 text-marka-gray">
-                    {r.reasons.join(", ")}
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="text-xs text-emerald-700 underline"
-                      >
-                        Visualizar
-                      </button>
-                      <button
-                        type="button"
-                        className="text-xs text-marka-graphite underline"
-                        onClick={() => {
-                          startImpersonation(r.establishment);
-                          toast.show(`Impersonation de ${r.establishment}`);
-                        }}
-                      >
-                        Acessar
-                      </button>
-                      <button
-                        type="button"
-                        className="text-xs text-emerald-700 underline"
-                      >
-                        Contato
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  Anterior
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

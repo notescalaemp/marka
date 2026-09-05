@@ -1,70 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
+import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
+import { getAdminSettings } from "@/lib/api";
+import type { AdminSettingsDto } from "@/lib/api-types";
 
 const SECTIONS = [
   "General",
-  "Billing",
-  "Plans",
-  "Notifications",
-  "Security",
-  "Integrations",
   "Feature Flags",
   "System",
 ] as const;
 
-const SECTION_FIELDS: Record<(typeof SECTIONS)[number], { label: string; type: "text" | "select" | "toggle"; options?: string[]; default?: string }[]> = {
-  General: [
-    { label: "Nome da marca", type: "text", default: "marka.ia" },
-    { label: "Domínio", type: "text", default: "marka.ia" },
-    { label: "Locale padrão", type: "select", options: ["pt-BR", "en-US"], default: "pt-BR" },
-  ],
-  Billing: [
-    { label: "Gateway de pagamento", type: "select", options: ["Stripe", "PagSeguro", "PayPal"], default: "Stripe" },
-    { label: "Taxa de sucesso", type: "text", default: "0.5%" },
-  ],
-  Plans: [
-    { label: "Máximo de planos ativos", type: "text", default: "10" },
-  ],
-  Notifications: [
-    { label: "E-mail de alertas", type: "text", default: "ops@marka.ia" },
-    { label: "Webhook de falhas", type: "text", default: "https://" },
-  ],
-  Security: [
-    { label: "2FA obrigatório", type: "toggle", default: "true" },
-    { label: "Token de sessão (min)", type: "text", default: "60" },
-  ],
-  Integrations: [
-    { label: "Slack", type: "toggle", default: "false" },
-    { label: "HubSpot", type: "toggle", default: "false" },
-  ],
-  "Feature Flags": [
-    { label: "marka AI", type: "toggle", default: "true" },
-    { label: "CRM v2", type: "toggle", default: "false" },
-  ],
-  System: [
-    { label: "Data retention (dias)", type: "text", default: "90" },
-  ],
-};
+type Section = (typeof SECTIONS)[number];
 
 export function SettingsPage() {
-  const [loading] = useState(false);
-  const [section, setSection] = useState<(typeof SECTIONS)[number]>("General");
-  const [values, setValues] = useState<Record<string, Record<string, string>>>(
-    Object.fromEntries(
-      SECTIONS.map((s) => [
-        s,
-        Object.fromEntries(
-          (SECTION_FIELDS[s] ?? []).map((f) => [f.label, f.default ?? ""])
-        ),
-      ])
-    )
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<AdminSettingsDto | null>(null);
+  const [section, setSection] = useState<Section>("General");
+  const [brandName, setBrandName] = useState("");
+  const [locale, setLocale] = useState("pt-BR");
+  const [features, setFeatures] = useState<AdminSettingsDto["features"] | null>(
+    null
   );
   const toast = useToast();
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const dto = await getAdminSettings();
+      setSettings(dto);
+      setBrandName(dto.brand.name);
+      setLocale(dto.brand.locale);
+      setFeatures({ ...dto.features });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar settings");
+      setSettings(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  function handleSave() {
+    toast.show(
+      "Persistência de settings ainda não está disponível (API retorna 501)."
+    );
+  }
+
+  function handleReset() {
+    if (!settings) return;
+    setBrandName(settings.brand.name);
+    setLocale(settings.brand.locale);
+    setFeatures({ ...settings.features });
+  }
 
   if (loading) {
     return (
@@ -75,7 +72,20 @@ export function SettingsPage() {
     );
   }
 
-  const fields = SECTION_FIELDS[section];
+  if (error || !settings) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Settings"
+          description="Configurações internas do SaaS."
+        />
+        <ErrorState
+          description={error ?? "Settings indisponíveis"}
+          onRetry={() => void load()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -83,6 +93,12 @@ export function SettingsPage() {
         title="Settings"
         description="Configurações internas do SaaS."
       />
+
+      {settings.note ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {settings.note}
+        </p>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
         <aside className="rounded-lg border border-marka-graphite/10 bg-marka-white p-2">
@@ -106,100 +122,85 @@ export function SettingsPage() {
           <h2 className="text-sm font-medium text-marka-graphite">{section}</h2>
 
           <div className="mt-4 space-y-4">
-            {fields.map((field) => {
-              const value = values[section]?.[field.label] ?? "";
-              if (field.type === "toggle") {
-                return (
-                  <label
-                    key={field.label}
-                    className="flex items-center justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
-                  >
-                    <span className="text-sm">{field.label}</span>
-                    <input
-                      type="checkbox"
-                      checked={value === "true"}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          [section]: {
-                            ...prev[section],
-                            [field.label]: e.target.checked ? "true" : "false",
-                          },
-                        }))
-                      }
-                    />
-                  </label>
-                );
-              }
-              if (field.type === "select") {
-                return (
-                  <label key={field.label} className="block">
-                    <span className="text-xs text-marka-gray">{field.label}</span>
-                    <select
-                      className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
-                      value={value}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          [section]: {
-                            ...prev[section],
-                            [field.label]: e.target.value,
-                          },
-                        }))
-                      }
-                    >
-                      {(field.options ?? []).map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                );
-              }
-              return (
-                <label key={field.label} className="block">
-                  <span className="text-xs text-marka-gray">{field.label}</span>
+            {section === "General" ? (
+              <>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">Nome da marca</span>
                   <input
                     className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
-                    value={value}
+                    value={brandName}
+                    onChange={(e) => setBrandName(e.target.value)}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">Locale padrão</span>
+                  <select
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                    value={locale}
+                    onChange={(e) => setLocale(e.target.value)}
+                  >
+                    <option value="pt-BR">pt-BR</option>
+                    <option value="en-US">en-US</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">Ambiente</span>
+                  <input
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
+                    value={settings.environment}
+                    readOnly
+                  />
+                </label>
+              </>
+            ) : null}
+
+            {section === "Feature Flags" && features ? (
+              Object.entries(features).map(([key, enabled]) => (
+                <label
+                  key={key}
+                  className="flex items-center justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
+                >
+                  <span className="text-sm capitalize">{key.replace(/([A-Z])/g, " $1")}</span>
+                  <input
+                    type="checkbox"
+                    checked={enabled}
                     onChange={(e) =>
-                      setValues((prev) => ({
-                        ...prev,
-                        [section]: {
-                          ...prev[section],
-                          [field.label]: e.target.value,
-                        },
-                      }))
+                      setFeatures((prev) =>
+                        prev ? { ...prev, [key]: e.target.checked } : prev
+                      )
                     }
                   />
                 </label>
-              );
-            })}
+              ))
+            ) : null}
+
+            {section === "System" ? (
+              <>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">API URL</span>
+                  <input
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
+                    value={settings.apiUrl ?? "—"}
+                    readOnly
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs text-marka-gray">Cookie domain</span>
+                  <input
+                    className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
+                    value={settings.cookieDomain ?? "—"}
+                    readOnly
+                  />
+                </label>
+              </>
+            ) : null}
           </div>
 
           <div className="mt-4 flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => toast.show(`${section} salvo`)}
-            >
+            <Button size="sm" onClick={handleSave}>
               Salvar
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() =>
-                setValues((prev) => ({
-                  ...prev,
-                  [section]: Object.fromEntries(
-                    (SECTION_FIELDS[section] ?? []).map((f) => [
-                      f.label,
-                      f.default ?? "",
-                    ])
-                  ),
-                }))
-              }
-            >
+            <Button size="sm" variant="secondary" onClick={handleReset}>
               Reset
             </Button>
           </div>

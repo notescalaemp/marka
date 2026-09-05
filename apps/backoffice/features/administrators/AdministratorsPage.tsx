@@ -1,13 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
-import { administrators } from "@/lib/mock-data";
-import type { AdminRole } from "@/lib/types";
+import {
+  createAdminAdministrator,
+  getAdminAdministrators,
+  patchAdminAdministrator,
+} from "@/lib/api";
+import type { AdminAdministratorListItemDto } from "@/lib/api-types";
+import type { AdminRole, Role } from "@/lib/types";
+import { formatDateTime } from "@/lib/format";
 
 const ROLES = [
   "Super Admin",
@@ -18,14 +25,49 @@ const ROLES = [
   "Read Only",
 ] as const;
 
+const ROLE_LABEL_TO_API: Record<AdminRole, Role> = {
+  "Super Admin": "super_admin",
+  Finance: "finance",
+  Support: "support",
+  Operations: "operations",
+  Product: "product",
+  "Read Only": "read_only",
+};
+
 export function AdministratorsPage() {
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [role, setRole] = useState<"all" | AdminRole>("all");
   const [status, setStatus] = useState<"all" | "ativo" | "inativo">("all");
   const [showCreate, setShowCreate] = useState(false);
-  const [admins, setAdmins] = useState(administrators);
+  const [admins, setAdmins] = useState<AdminAdministratorListItemDto[]>([]);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [createName, setCreateName] = useState("");
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createRole, setCreateRole] = useState<AdminRole>("Support");
+  const [saving, setSaving] = useState(false);
   const toast = useToast();
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAdminAdministrators();
+      setAdmins(data);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Erro ao carregar administradores"
+      );
+      setAdmins([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     return admins.filter((a) => {
@@ -35,11 +77,72 @@ export function AdministratorsPage() {
     });
   }, [role, status, admins]);
 
-  if (loading) {
+  const superAdminCount = admins.filter((a) => a.role === "Super Admin").length;
+  const readOnlyCount = admins.filter((a) => a.role === "Read Only").length;
+
+  async function toggleStatus(admin: AdminAdministratorListItemDto) {
+    setSaving(true);
+    try {
+      await patchAdminAdministrator(admin.id, {
+        status: admin.status === "ativo" ? "SUSPENDED" : "ACTIVE",
+      });
+      toast.show(
+        admin.status === "ativo"
+          ? "Administrador desativado"
+          : "Administrador ativado"
+      );
+      await load();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Erro ao atualizar status");
+    } finally {
+      setSaving(false);
+      setConfirmId(null);
+    }
+  }
+
+  async function handleCreate() {
+    if (!createName.trim() || !createEmail.trim() || createPassword.length < 8) {
+      toast.show("Nome, e-mail e senha (mín. 8) são obrigatórios");
+      return;
+    }
+    setSaving(true);
+    try {
+      await createAdminAdministrator({
+        name: createName.trim(),
+        email: createEmail.trim(),
+        password: createPassword,
+        role: ROLE_LABEL_TO_API[createRole],
+      });
+      setShowCreate(false);
+      setCreateName("");
+      setCreateEmail("");
+      setCreatePassword("");
+      toast.show("Administrador criado");
+      await load();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Erro ao criar administrador");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading && admins.length === 0) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (error && admins.length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Administrators"
+          description="Gerenciamento de administradores internos."
+        />
+        <ErrorState description={error} onRetry={() => void load()} />
       </div>
     );
   }
@@ -63,8 +166,8 @@ export function AdministratorsPage() {
             label: "Ativos",
             value: String(admins.filter((a) => a.status === "ativo").length),
           },
-          { label: "Super Admin", value: "1" },
-          { label: "Read Only", value: "1" },
+          { label: "Super Admin", value: String(superAdminCount) },
+          { label: "Read Only", value: String(readOnlyCount) },
         ].map((m) => (
           <div
             key={m.label}
@@ -133,24 +236,20 @@ export function AdministratorsPage() {
                       {a.status}
                     </span>
                   </td>
-                  <td className="px-2 py-2 text-marka-gray">{a.lastLogin}</td>
+                  <td className="px-2 py-2 text-marka-gray">
+                    {a.lastLogin ? formatDateTime(a.lastLogin) : "—"}
+                  </td>
                   <td className="px-2 py-2">
                     <div className="flex gap-2">
                       <button
                         type="button"
                         className="text-xs text-emerald-700 underline"
+                        disabled={saving}
                         onClick={() => {
                           if (a.status === "ativo") {
                             setConfirmId(a.id);
                           } else {
-                            setAdmins((prev) =>
-                              prev.map((x) =>
-                                x.id === a.id
-                                  ? { ...x, status: "ativo" }
-                                  : x
-                              )
-                            );
-                            toast.show("Administrador ativado");
+                            void toggleStatus(a);
                           }
                         }}
                       >
@@ -173,13 +272,32 @@ export function AdministratorsPage() {
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <input
               placeholder="Nome"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
               className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
               aria-label="Nome do administrador"
+            />
+            <input
+              placeholder="E-mail"
+              type="email"
+              value={createEmail}
+              onChange={(e) => setCreateEmail(e.target.value)}
+              className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+              aria-label="E-mail do administrador"
+            />
+            <input
+              placeholder="Senha (mín. 8)"
+              type="password"
+              value={createPassword}
+              onChange={(e) => setCreatePassword(e.target.value)}
+              className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+              aria-label="Senha"
             />
             <select
               className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
               aria-label="Role"
-              defaultValue="Support"
+              value={createRole}
+              onChange={(e) => setCreateRole(e.target.value as AdminRole)}
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -192,13 +310,7 @@ export function AdministratorsPage() {
             <Button size="sm" onClick={() => setShowCreate(false)}>
               Cancelar
             </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                setShowCreate(false);
-                toast.show("Administrador criado");
-              }}
-            >
+            <Button size="sm" disabled={saving} onClick={() => void handleCreate()}>
               Salvar
             </Button>
           </div>
@@ -211,14 +323,8 @@ export function AdministratorsPage() {
         description="O usuário perderá acesso ao backoffice até ser reativado."
         confirmLabel="Desativar"
         onConfirm={() => {
-          if (!confirmId) return;
-          setAdmins((prev) =>
-            prev.map((x) =>
-              x.id === confirmId ? { ...x, status: "inativo" } : x
-            )
-          );
-          toast.show("Administrador desativado");
-          setConfirmId(null);
+          const admin = admins.find((a) => a.id === confirmId);
+          if (admin) void toggleStatus(admin);
         }}
         onCancel={() => setConfirmId(null)}
       />

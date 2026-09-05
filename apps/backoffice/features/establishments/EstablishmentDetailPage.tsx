@@ -12,10 +12,14 @@ import { ApiError, getAdminEstablishment } from "@/lib/api";
 import type { EstablishmentDetailView } from "@/lib/api-types";
 import { formatNumber, formatPrice } from "@/lib/format";
 import { mapEstablishmentDetail } from "@/lib/mappers";
+import { useStore } from "@/lib/store";
+import { useToast } from "@/components/Toast";
 
 export function EstablishmentDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const { startImpersonation } = useStore();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -261,11 +265,30 @@ export function EstablishmentDetailPage() {
         title={data.name}
         description={`${data.ownerName} · ${data.plan} · ${data.status}`}
         actions={
-          <Link href="/establishments">
-            <Button size="sm" variant="secondary">
-              Voltar
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                void startImpersonation({ id: data.id, name: data.name })
+                  .then(() => toast.show(`Impersonation de ${data.name}`))
+                  .catch((err) =>
+                    toast.show(
+                      err instanceof Error
+                        ? err.message
+                        : "Erro ao iniciar impersonation"
+                    )
+                  );
+              }}
+            >
+              Acessar como owner
             </Button>
-          </Link>
+            <Link href="/establishments">
+              <Button size="sm" variant="secondary">
+                Voltar
+              </Button>
+            </Link>
+          </>
         }
       />
 

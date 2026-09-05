@@ -2,10 +2,33 @@
 // auth handling (cookie-based session, 401s, error shape) lives in one
 // place instead of being duplicated per component.
 import type {
+  AdminAcquisitionDto,
+  AdminAdministratorListItemDto,
+  AdminAlertDto,
+  AdminAuditLogDto,
+  AdminChurnAnalyticsDto,
+  AdminChurnRiskListDto,
+  AdminCustomerListItemDto,
+  AdminCustomersListDto,
   AdminEstablishmentDetailDto,
   AdminEstablishmentListItemDto,
   AdminEstablishmentListMeta,
+  AdminFinanceDto,
+  AdminImpersonateResponseDto,
+  AdminListMeta,
   AdminOverviewDto,
+  AdminPaymentListItemDto,
+  AdminPaymentsListDto,
+  AdminPlanDetailDto,
+  AdminPlanListItemDto,
+  AdminProductUsageDto,
+  AdminRetentionCohortDto,
+  AdminSettingsDto,
+  AdminSubscriptionListItemDto,
+  AdminSubscriptionsListDto,
+  AdminSupportTicketsDto,
+  AdminUserListItemDto,
+  AdminUsersListDto,
 } from "./api-types";
 import type { Role } from "./types";
 
@@ -134,4 +157,194 @@ export function getAdminEstablishments(query: AdminEstablishmentsQuery = {}) {
 
 export function getAdminEstablishment(id: string) {
   return apiGet<AdminEstablishmentDetailDto>(`/api/admin/establishments/${id}`);
+}
+
+function buildQuery(params: object) {
+  const sp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null && value !== "") sp.set(key, String(value));
+  }
+  const qs = sp.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export interface AdminUsersQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  type?: string;
+  status?: string;
+}
+
+export function getAdminUsers(query: AdminUsersQuery = {}) {
+  return requestWithMeta<AdminUsersListDto, AdminListMeta>(
+    `/api/admin/users${buildQuery(query)}`
+  );
+}
+
+export function getAdminPlans() {
+  return apiGet<AdminPlanListItemDto[]>("/api/admin/plans");
+}
+
+export interface CreatePlanInput {
+  code: string;
+  name: string;
+  priceMonthly: number;
+  active?: boolean;
+}
+
+export function createAdminPlan(data: CreatePlanInput) {
+  return apiPost<AdminPlanDetailDto>("/api/admin/plans", data);
+}
+
+export interface PatchPlanInput {
+  name?: string;
+  priceMonthly?: number;
+  active?: boolean;
+}
+
+export function patchAdminPlan(id: string, data: PatchPlanInput) {
+  return apiPatch<AdminPlanDetailDto>(`/api/admin/plans/${id}`, data);
+}
+
+export interface AdminSubscriptionsQuery {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  plan?: string;
+}
+
+export function getAdminSubscriptions(query: AdminSubscriptionsQuery = {}) {
+  return requestWithMeta<AdminSubscriptionsListDto, AdminListMeta>(
+    `/api/admin/subscriptions${buildQuery(query)}`
+  );
+}
+
+export interface AdminPaymentsQuery {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  method?: string;
+}
+
+export function getAdminPayments(query: AdminPaymentsQuery = {}) {
+  return requestWithMeta<AdminPaymentsListDto, AdminListMeta>(
+    `/api/admin/payments${buildQuery(query)}`
+  );
+}
+
+export type FinancePeriod = "7d" | "30d" | "90d";
+
+export function getAdminFinance(period: FinancePeriod = "30d") {
+  return apiGet<AdminFinanceDto>(`/api/admin/finance?period=${period}`);
+}
+
+export interface AdminCustomersQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+}
+
+export function getAdminCustomers(query: AdminCustomersQuery = {}) {
+  return requestWithMeta<AdminCustomersListDto, AdminListMeta>(
+    `/api/admin/customers${buildQuery(query)}`
+  );
+}
+
+export interface AdminChurnRiskQuery {
+  page?: number;
+  pageSize?: number;
+}
+
+export function getAdminChurnRisk(query: AdminChurnRiskQuery = {}) {
+  return requestWithMeta<AdminChurnRiskListDto, AdminListMeta>(
+    `/api/admin/churn-risk${buildQuery(query)}`
+  );
+}
+
+export function getAdminAlerts() {
+  return apiGet<AdminAlertDto[]>("/api/admin/alerts");
+}
+
+export function getAdminSupportTickets() {
+  return apiGet<AdminSupportTicketsDto>("/api/admin/support/tickets");
+}
+
+export function getAdminAdministrators() {
+  return apiGet<AdminAdministratorListItemDto[]>("/api/admin/administrators");
+}
+
+export interface CreateAdministratorInput {
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
+}
+
+export function createAdminAdministrator(data: CreateAdministratorInput) {
+  return apiPost<AdminAdministratorListItemDto>(
+    "/api/admin/administrators",
+    data
+  );
+}
+
+export interface PatchAdministratorInput {
+  status?: "ACTIVE" | "SUSPENDED";
+  role?: Role;
+}
+
+export function patchAdminAdministrator(id: string, data: PatchAdministratorInput) {
+  return apiPatch<AdminAdministratorListItemDto>(
+    `/api/admin/administrators/${id}`,
+    data
+  );
+}
+
+export interface AdminAuditLogsQuery {
+  page?: number;
+  pageSize?: number;
+  action?: string;
+  admin?: string;
+}
+
+export function getAdminAuditLogs(query: AdminAuditLogsQuery = {}) {
+  return requestWithMeta<AdminAuditLogDto[], AdminListMeta>(
+    `/api/admin/audit-logs${buildQuery(query)}`
+  );
+}
+
+export type AnalyticsPeriod = "7d" | "30d" | "90d";
+
+export function getAdminAcquisitionAnalytics(period?: AnalyticsPeriod) {
+  const qs = period ? `?period=${period}` : "";
+  return apiGet<AdminAcquisitionDto>(`/api/admin/analytics/acquisition${qs}`);
+}
+
+export function getAdminRetentionAnalytics() {
+  return apiGet<{ cohorts: AdminRetentionCohortDto[] }>(
+    "/api/admin/analytics/retention"
+  );
+}
+
+export function getAdminProductUsageAnalytics() {
+  return apiGet<AdminProductUsageDto>("/api/admin/analytics/product-usage");
+}
+
+export function getAdminChurnAnalytics() {
+  return apiGet<AdminChurnAnalyticsDto>("/api/admin/analytics/churn");
+}
+
+export function getAdminSettings() {
+  return apiGet<AdminSettingsDto>("/api/admin/settings");
+}
+
+export function startAdminImpersonation(establishmentId: string) {
+  return apiPost<AdminImpersonateResponseDto>("/api/admin/impersonate", {
+    establishmentId,
+  });
+}
+
+export function endAdminImpersonation() {
+  return apiDelete<void>("/api/admin/impersonate");
 }
