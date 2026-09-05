@@ -241,6 +241,23 @@ async function main() {
   });
   console.log(`Seeded plan: ${plan.code}`);
 
+  await db.platformSettings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      brandName: "marka.ia",
+      locale: "pt-BR",
+      features: {
+        impersonation: true,
+        auditLogs: true,
+        marketingCampaigns: true,
+        onlinePayments: false,
+      },
+    },
+  });
+  console.log("Seeded platform settings");
+
   await seedDemoCatalog();
 }
 

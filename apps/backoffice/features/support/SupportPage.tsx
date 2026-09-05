@@ -7,7 +7,11 @@ import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
-import { getAdminSupportTickets } from "@/lib/api";
+import {
+  createAdminSupportTicket,
+  getAdminSupportTickets,
+  updateAdminSupportTicket,
+} from "@/lib/api";
 import type {
   AdminSupportKpisDto,
   AdminSupportTicketDto,
@@ -17,6 +21,7 @@ import { formatDateTime, formatNumber } from "@/lib/format";
 const TYPE_FILTERS = ["all", "billing", "technical", "onboarding"] as const;
 const STATUS_FILTERS = ["all", "open", "in_progress", "resolved"] as const;
 const PRIORITY_FILTERS = ["all", "high", "medium", "low"] as const;
+const STATUS_ACTIONS = ["open", "in_progress", "resolved"] as const;
 
 export function SupportPage() {
   const [loading, setLoading] = useState(true);
@@ -27,17 +32,36 @@ export function SupportPage() {
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>("all");
   const [priority, setPriority] = useState<(typeof PRIORITY_FILTERS)[number]>("all");
   const [q, setQ] = useState("");
-  const toast = useToast();
   const [selected, setSelected] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({
+    subject: "",
+    customerName: "",
+    type: "billing" as "billing" | "technical" | "onboarding",
+    priority: "medium" as "high" | "medium" | "low",
+    description: "",
+  });
+  const toast = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAdminSupportTickets();
+      const data = await getAdminSupportTickets({
+        search: q.trim() || undefined,
+        type,
+        status,
+        priority,
+      });
       setTickets(data.items);
       setKpis(data.kpis);
-      setSelected(data.items[0]?.id ?? null);
+      setSelected((prev) =>
+        prev && data.items.some((t) => t.id === prev)
+          ? prev
+          : (data.items[0]?.id ?? null)
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar tickets");
       setTickets([]);
@@ -45,31 +69,67 @@ export function SupportPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [q, type, status, priority]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const filtered = useMemo(() => {
-    return tickets.filter((t) => {
-      if (type !== "all" && t.type !== type) return false;
-      if (status !== "all" && t.status !== status) return false;
-      if (priority !== "all" && t.priority !== priority) return false;
-      if (q.trim()) {
-        const hay = `${t.subject} ${t.customer} ${t.establishment}`.toLowerCase();
-        if (!hay.includes(q.toLowerCase())) return false;
-      }
-      return true;
-    });
-  }, [type, status, priority, q, tickets]);
-
   const selectedTicket = useMemo(
-    () => tickets.find((t) => t.id === selected),
+    () => tickets.find((t) => t.id === selected) ?? null,
     [tickets, selected]
   );
 
-  if (loading) {
+  async function handleCreate() {
+    if (!form.subject.trim() || !form.customerName.trim()) {
+      toast.show("Preencha assunto e cliente");
+      return;
+    }
+    setCreating(true);
+    try {
+      const ticket = await createAdminSupportTicket({
+        subject: form.subject.trim(),
+        customerName: form.customerName.trim(),
+        type: form.type,
+        priority: form.priority,
+        description: form.description.trim() || undefined,
+      });
+      toast.show("Ticket criado");
+      setShowCreate(false);
+      setForm({
+        subject: "",
+        customerName: "",
+        type: "billing",
+        priority: "medium",
+        description: "",
+      });
+      await load();
+      setSelected(ticket.id);
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Falha ao criar ticket");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleStatusChange(next: (typeof STATUS_ACTIONS)[number]) {
+    if (!selectedTicket) return;
+    setSaving(true);
+    try {
+      const updated = await updateAdminSupportTicket(selectedTicket.id, {
+        status: next,
+      });
+      setTickets((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      toast.show("Status atualizado");
+      await load();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Falha ao atualizar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading && tickets.length === 0) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -78,7 +138,7 @@ export function SupportPage() {
     );
   }
 
-  if (error) {
+  if (error && tickets.length === 0) {
     return (
       <div className="space-y-6">
         <PageHeader
@@ -96,51 +156,127 @@ export function SupportPage() {
         title="Support"
         description="Central de suporte interno para contas e incidentes."
         actions={
-          <Button size="sm" onClick={() => toast.show("Ticket aberto (mock)")}>
-            Novo ticket
+          <Button size="sm" onClick={() => setShowCreate((v) => !v)}>
+            {showCreate ? "Cancelar" : "Novo ticket"}
           </Button>
         }
       />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Tickets abertos", value: kpis ? formatNumber(kpis.open) : "—" },
+          { label: "Abertos", value: formatNumber(kpis?.open ?? 0) },
           {
-            label: "High priority",
-            value: kpis ? formatNumber(kpis.highPriority) : "—",
+            label: "Alta prioridade",
+            value: formatNumber(kpis?.highPriority ?? 0),
           },
-          {
-            label: "Resolved",
-            value: kpis ? formatNumber(kpis.resolved) : "—",
-          },
-          {
-            label: "Aberto",
-            value: kpis ? formatNumber(kpis.openOnly) : "—",
-          },
+          { label: "Resolvidos", value: formatNumber(kpis?.resolved ?? 0) },
+          { label: "Em aberto", value: formatNumber(kpis?.openOnly ?? 0) },
         ].map((m) => (
           <div
             key={m.label}
             className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
-            <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
+            <p className="mt-1 text-lg font-semibold text-marka-black">
+              {m.value}
+            </p>
           </div>
         ))}
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      {showCreate ? (
+        <div className="space-y-3 rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+          <h2 className="text-sm font-medium text-marka-graphite">Novo ticket</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-xs text-marka-gray">Assunto</span>
+              <input
+                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                value={form.subject}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, subject: e.target.value }))
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-marka-gray">Cliente</span>
+              <input
+                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                value={form.customerName}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, customerName: e.target.value }))
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-marka-gray">Tipo</span>
+              <select
+                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                value={form.type}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    type: e.target.value as typeof form.type,
+                  }))
+                }
+              >
+                <option value="billing">billing</option>
+                <option value="technical">technical</option>
+                <option value="onboarding">onboarding</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs text-marka-gray">Prioridade</span>
+              <select
+                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                value={form.priority}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    priority: e.target.value as typeof form.priority,
+                  }))
+                }
+              >
+                <option value="high">high</option>
+                <option value="medium">medium</option>
+                <option value="low">low</option>
+              </select>
+            </label>
+          </div>
+          <label className="block">
+            <span className="text-xs text-marka-gray">Descrição</span>
+            <textarea
+              className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+              rows={3}
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </label>
+          <Button
+            size="sm"
+            disabled={creating}
+            onClick={() => void handleCreate()}
+          >
+            {creating ? "Criando…" : "Criar ticket"}
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-3">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar ticket..."
-              className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+              placeholder="Buscar…"
+              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
               aria-label="Buscar tickets"
             />
             <select
               value={type}
-              onChange={(e) => setType(e.target.value as (typeof TYPE_FILTERS)[number])}
+              onChange={(e) => setType(e.target.value as typeof type)}
               className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
               aria-label="Filtro tipo"
             >
@@ -152,7 +288,7 @@ export function SupportPage() {
             </select>
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value as (typeof STATUS_FILTERS)[number])}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
               className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
               aria-label="Filtro status"
             >
@@ -164,7 +300,7 @@ export function SupportPage() {
             </select>
             <select
               value={priority}
-              onChange={(e) => setPriority(e.target.value as (typeof PRIORITY_FILTERS)[number])}
+              onChange={(e) => setPriority(e.target.value as typeof priority)}
               className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
               aria-label="Filtro prioridade"
             >
@@ -176,10 +312,10 @@ export function SupportPage() {
             </select>
           </div>
 
-          {filtered.length === 0 ? (
+          {tickets.length === 0 ? (
             <EmptyState
-              title="Nenhum ticket com esses filtros"
-              description="Ajuste a busca ou limpe os filtros."
+              title="Nenhum ticket encontrado"
+              description="Crie um ticket ou ajuste os filtros."
             />
           ) : (
             <div className="overflow-x-auto">
@@ -195,7 +331,7 @@ export function SupportPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((t) => (
+                  {tickets.map((t) => (
                     <tr
                       key={t.id}
                       className={`border-b border-marka-graphite/5 hover:bg-marka-off/60 ${
@@ -213,7 +349,9 @@ export function SupportPage() {
                       </td>
                       <td className="px-2 py-2">{t.customer}</td>
                       <td className="px-2 py-2 capitalize">{t.type}</td>
-                      <td className="px-2 py-2 capitalize">{t.status}</td>
+                      <td className="px-2 py-2 capitalize">
+                        {t.status.replace("_", " ")}
+                      </td>
                       <td className="px-2 py-2 capitalize">{t.priority}</td>
                       <td className="px-2 py-2 text-marka-gray">
                         {formatDateTime(t.createdAt)}
@@ -249,7 +387,24 @@ export function SupportPage() {
               </div>
               <div>
                 <p className="text-xs text-marka-gray">Status</p>
-                <p className="text-sm capitalize">{selectedTicket.status}</p>
+                <p className="text-sm capitalize">
+                  {selectedTicket.status.replace("_", " ")}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {STATUS_ACTIONS.map((s) => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    variant={
+                      selectedTicket.status === s ? "primary" : "secondary"
+                    }
+                    disabled={saving || selectedTicket.status === s}
+                    onClick={() => void handleStatusChange(s)}
+                  >
+                    {s.replace("_", " ")}
+                  </Button>
+                ))}
               </div>
             </div>
           )}

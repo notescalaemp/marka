@@ -1,5 +1,5 @@
 import { db, Prisma } from "@marka/db";
-import type { BusinessRole, PaymentMethod, PaymentStatus, SubscriptionStatus, UserStatus } from "@marka/db";
+import type { BusinessRole, PaymentMethod, PaymentStatus, SubscriptionStatus, SupportTicketPriority, SupportTicketStatus, SupportTicketType, UserStatus } from "@marka/db";
 import {
   getChurnRate,
   getGlobalMrr,
@@ -273,7 +273,9 @@ export async function queryPlansList() {
         upgradeRate: 0,
         downgradeRate: 0,
         trialToPaid,
-        ltv: null,
+        // Classic SaaS approximation: ARPU / monthly churn. Null when churn is 0
+        // (no lifetime observed yet) so we never invent an infinite LTV.
+        ltv: churn > 0 ? Math.round((arpu / (churn / 100)) * 100) / 100 : null,
       };
     })
   );
@@ -824,8 +826,10 @@ export async function queryAcquisitionAnalytics(period?: "7d" | "30d" | "90d") {
       { label: "Trials (TRIALING)", value: trialing },
       { label: "Active paid (ACTIVE)", value: activePaid },
     ],
-    // No attribution model exists — channels cannot be derived from real data.
-    channels: [],
+    // No marketing attribution model exists. When there are real signups we
+    // surface a single honest "Não atribuído" bucket instead of inventing channels.
+    channels: leads > 0 ? [{ label: "Não atribuído", value: 100 }] : [],
+
   };
 }
 
@@ -962,7 +966,9 @@ export async function queryChurnAnalytics() {
     kpis: {
       customerChurn,
       revenueChurn,
-      grr: null,
+      // Gross Retention ≈ 100 - revenue churn (no expansion tracked).
+      grr: Math.max(0, Math.round((100 - revenueChurn) * 10) / 10),
+      // Net Retention needs expansion/upsell revenue history — not available.
       nrr: null,
     },
     breakdown,
@@ -971,21 +977,201 @@ export async function queryChurnAnalytics() {
 }
 
 // ---------------------------------------------------------------------------
-// Settings (read-only — no persistence layer)
+// Support tickets
 // ---------------------------------------------------------------------------
 
-export function querySettings() {
+export interface SupportTicketsListFilters {
+  search?: string;
+  type?: SupportTicketType | "all";
+  status?: SupportTicketStatus | "all";
+  priority?: SupportTicketPriority | "all";
+}
+
+function mapSupportTicket(t: {
+  id: string;
+  subject: string;
+  customerName: string;
+  type: SupportTicketType;
+  status: SupportTicketStatus;
+  priority: SupportTicketPriority;
+  createdAt: Date;
+  establishment: { name: string } | null;
+}) {
   return {
-    brand: { name: "marka.ia", locale: "pt-BR" },
+    id: t.id,
+    subject: t.subject,
+    customer: t.customerName,
+    establishment: t.establishment?.name ?? "—",
+    type: t.type,
+    status: t.status,
+    priority: t.priority,
+    createdAt: t.createdAt.toISOString(),
+  };
+}
+
+export async function querySupportTickets(filters: SupportTicketsListFilters = {}) {
+  const where: Prisma.SupportTicketWhereInput = {};
+  if (filters.type && filters.type !== "all") where.type = filters.type;
+  if (filters.status && filters.status !== "all") where.status = filters.status;
+  if (filters.priority && filters.priority !== "all") where.priority = filters.priority;
+  if (filters.search) {
+    where.OR = [
+      { subject: { contains: filters.search, mode: "insensitive" } },
+      { customerName: { contains: filters.search, mode: "insensitive" } },
+      { establishment: { name: { contains: filters.search, mode: "insensitive" } } },
+    ];
+  }
+
+  const [tickets, open, highPriority, resolved] = await Promise.all([
+    db.supportTicket.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: { establishment: { select: { name: true } } },
+      take: 200,
+    }),
+    db.supportTicket.count({ where: { status: { in: ["open", "in_progress"] } } }),
+    db.supportTicket.count({ where: { priority: "high", status: { in: ["open", "in_progress"] } } }),
+    db.supportTicket.count({ where: { status: "resolved" } }),
+  ]);
+
+  return {
+    kpis: {
+      open,
+      highPriority,
+      resolved,
+      openOnly: open,
+    },
+    items: tickets.map(mapSupportTicket),
+  };
+}
+
+export async function createSupportTicket(input: {
+  subject: string;
+  description?: string;
+  type: SupportTicketType;
+  priority: SupportTicketPriority;
+  customerName: string;
+  establishmentId?: string;
+  createdById: string;
+}) {
+  const ticket = await db.supportTicket.create({
+    data: {
+      subject: input.subject,
+      description: input.description,
+      type: input.type,
+      priority: input.priority,
+      customerName: input.customerName,
+      establishmentId: input.establishmentId,
+      createdById: input.createdById,
+      status: "open",
+    },
+    include: { establishment: { select: { name: true } } },
+  });
+  return mapSupportTicket(ticket);
+}
+
+export async function updateSupportTicket(
+  id: string,
+  input: { status?: SupportTicketStatus; priority?: SupportTicketPriority; assigneeId?: string | null }
+) {
+  const existing = await db.supportTicket.findUnique({ where: { id } });
+  if (!existing) return null;
+
+  const ticket = await db.supportTicket.update({
+    where: { id },
+    data: {
+      status: input.status,
+      priority: input.priority,
+      assigneeId: input.assigneeId === undefined ? undefined : input.assigneeId,
+      resolvedAt:
+        input.status === undefined
+          ? undefined
+          : input.status === "resolved"
+            ? new Date()
+            : null,
+    },
+    include: { establishment: { select: { name: true } } },
+  });
+  return mapSupportTicket(ticket);
+}
+
+// ---------------------------------------------------------------------------
+// Settings (persisted singleton)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_FEATURES = {
+  impersonation: true,
+  auditLogs: true,
+  marketingCampaigns: true,
+  onlinePayments: false,
+};
+
+type SettingsFeatures = typeof DEFAULT_FEATURES;
+
+function parseFeatures(value: unknown): SettingsFeatures {
+  if (!value || typeof value !== "object") return { ...DEFAULT_FEATURES };
+  const v = value as Record<string, unknown>;
+  return {
+    impersonation: Boolean(v.impersonation ?? DEFAULT_FEATURES.impersonation),
+    auditLogs: Boolean(v.auditLogs ?? DEFAULT_FEATURES.auditLogs),
+    marketingCampaigns: Boolean(v.marketingCampaigns ?? DEFAULT_FEATURES.marketingCampaigns),
+    onlinePayments: Boolean(v.onlinePayments ?? DEFAULT_FEATURES.onlinePayments),
+  };
+}
+
+async function ensurePlatformSettings() {
+  const existing = await db.platformSettings.findUnique({ where: { id: "default" } });
+  if (existing) return existing;
+  return db.platformSettings.create({
+    data: {
+      id: "default",
+      brandName: "marka.ia",
+      locale: "pt-BR",
+      features: DEFAULT_FEATURES,
+    },
+  });
+}
+
+export async function querySettings() {
+  const row = await ensurePlatformSettings();
+  return {
+    brand: { name: row.brandName, locale: row.locale },
     environment: process.env.NODE_ENV ?? "development",
     apiUrl: process.env.NEXT_PUBLIC_API_URL ?? null,
     cookieDomain: process.env.COOKIE_DOMAIN ?? null,
-    features: {
-      impersonation: true,
-      auditLogs: true,
-      marketingCampaigns: true,
-      onlinePayments: false,
+    features: parseFeatures(row.features),
+    note: null as string | null,
+  };
+}
+
+export async function updateSettings(
+  input: {
+    brandName?: string;
+    locale?: string;
+    features?: Partial<SettingsFeatures>;
+  },
+  updatedById: string
+) {
+  const current = await ensurePlatformSettings();
+  const features = {
+    ...parseFeatures(current.features),
+    ...(input.features ?? {}),
+  };
+  const row = await db.platformSettings.update({
+    where: { id: "default" },
+    data: {
+      brandName: input.brandName?.trim() || current.brandName,
+      locale: input.locale?.trim() || current.locale,
+      features,
+      updatedById,
     },
-    note: "Settings are read-only; persistence is not implemented yet.",
+  });
+  return {
+    brand: { name: row.brandName, locale: row.locale },
+    environment: process.env.NODE_ENV ?? "development",
+    apiUrl: process.env.NEXT_PUBLIC_API_URL ?? null,
+    cookieDomain: process.env.COOKIE_DOMAIN ?? null,
+    features: parseFeatures(row.features),
+    note: null as string | null,
   };
 }

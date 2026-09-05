@@ -26,6 +26,7 @@ import type {
   AdminSettingsDto,
   AdminSubscriptionListItemDto,
   AdminSubscriptionsListDto,
+  AdminSupportTicketDto,
   AdminSupportTicketsDto,
   AdminUserListItemDto,
   AdminUsersListDto,
@@ -267,8 +268,39 @@ export function getAdminAlerts() {
   return apiGet<AdminAlertDto[]>("/api/admin/alerts");
 }
 
-export function getAdminSupportTickets() {
-  return apiGet<AdminSupportTicketsDto>("/api/admin/support/tickets");
+export function getAdminSupportTickets(query: {
+  search?: string;
+  type?: string;
+  status?: string;
+  priority?: string;
+} = {}) {
+  const params = new URLSearchParams();
+  if (query.search) params.set("search", query.search);
+  if (query.type && query.type !== "all") params.set("type", query.type);
+  if (query.status && query.status !== "all") params.set("status", query.status);
+  if (query.priority && query.priority !== "all") params.set("priority", query.priority);
+  const qs = params.toString();
+  return apiGet<AdminSupportTicketsDto>(
+    `/api/admin/support/tickets${qs ? `?${qs}` : ""}`
+  );
+}
+
+export function createAdminSupportTicket(input: {
+  subject: string;
+  description?: string;
+  type: string;
+  priority: string;
+  customerName: string;
+  establishmentId?: string;
+}) {
+  return apiPost<AdminSupportTicketDto>("/api/admin/support/tickets", input);
+}
+
+export function updateAdminSupportTicket(
+  id: string,
+  input: { status?: string; priority?: string; assigneeId?: string | null }
+) {
+  return apiPatch<AdminSupportTicketDto>(`/api/admin/support/tickets/${id}`, input);
 }
 
 export function getAdminAdministrators() {
@@ -337,6 +369,14 @@ export function getAdminChurnAnalytics() {
 
 export function getAdminSettings() {
   return apiGet<AdminSettingsDto>("/api/admin/settings");
+}
+
+export function updateAdminSettings(input: {
+  brandName?: string;
+  locale?: string;
+  features?: Partial<AdminSettingsDto["features"]>;
+}) {
+  return apiPatch<AdminSettingsDto>("/api/admin/settings", input);
 }
 
 export function startAdminImpersonation(establishmentId: string) {

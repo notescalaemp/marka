@@ -67,6 +67,7 @@ export type AdminPermission =
   | "churn"
   | "churn_risk"
   | "alerts"
+  | "support"
   | "audit_logs"
   | "administrators"
   | "settings"
@@ -88,6 +89,7 @@ const ADMIN_ALL: AdminPermission[] = [
   "churn",
   "churn_risk",
   "alerts",
+  "support",
   "audit_logs",
   "administrators",
   "settings",
@@ -117,6 +119,7 @@ const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "customers",
     "churn_risk",
     "alerts",
+    "support",
     "audit_logs",
     "impersonate",
   ],
@@ -133,6 +136,7 @@ const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "churn",
     "churn_risk",
     "alerts",
+    "support",
     "audit_logs",
   ],
   product: [
@@ -163,6 +167,7 @@ const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "churn",
     "churn_risk",
     "alerts",
+    "support",
     "audit_logs",
   ],
 };

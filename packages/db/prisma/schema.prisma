@@ -60,7 +60,9 @@ model Administrator {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  sessions     AdminSession[]
+  sessions           AdminSession[]
+  supportTicketsCreated SupportTicket[] @relation("SupportTicketCreatedBy")
+  supportTicketsAssigned SupportTicket[] @relation("SupportTicketAssignee")
 
   @@map("administrators")
 }
@@ -185,6 +187,7 @@ model Establishment {
   subscription  Subscription?
   auditLogs     AuditLog[]
   favoritedBy   FavoriteEstablishment[]
+  supportTickets SupportTicket[]
 
   @@map("establishments")
 }
@@ -659,4 +662,63 @@ enum AuditActorType {
   USER
   ADMINISTRATOR
   SYSTEM
+}
+
+// ---------------------------------------------------------------------------
+// Backoffice support + platform settings
+// ---------------------------------------------------------------------------
+
+model SupportTicket {
+  id              String                @id @default(cuid())
+  subject         String
+  description     String?
+  type            SupportTicketType
+  status          SupportTicketStatus   @default(open)
+  priority        SupportTicketPriority @default(medium)
+  customerName    String
+  establishmentId String?
+  createdById     String?
+  assigneeId      String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  resolvedAt      DateTime?
+
+  establishment Establishment? @relation(fields: [establishmentId], references: [id], onDelete: SetNull)
+  createdBy     Administrator? @relation("SupportTicketCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignee      Administrator? @relation("SupportTicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([status, priority])
+  @@index([establishmentId])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
+
+enum SupportTicketType {
+  billing
+  technical
+  onboarding
+}
+
+enum SupportTicketStatus {
+  open
+  in_progress
+  resolved
+}
+
+enum SupportTicketPriority {
+  high
+  medium
+  low
+}
+
+// Singleton platform settings row (id is always "default").
+model PlatformSettings {
+  id        String   @id @default("default")
+  brandName String   @default("marka.ia")
+  locale    String   @default("pt-BR")
+  features  Json
+  updatedAt DateTime @updatedAt
+  updatedById String?
+
+  @@map("platform_settings")
 }

@@ -6,19 +6,15 @@ import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
-import { getAdminSettings } from "@/lib/api";
+import { getAdminSettings, updateAdminSettings } from "@/lib/api";
 import type { AdminSettingsDto } from "@/lib/api-types";
 
-const SECTIONS = [
-  "General",
-  "Feature Flags",
-  "System",
-] as const;
-
+const SECTIONS = ["General", "Feature Flags", "System"] as const;
 type Section = (typeof SECTIONS)[number];
 
 export function SettingsPage() {
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<AdminSettingsDto | null>(null);
   const [section, setSection] = useState<Section>("General");
@@ -50,10 +46,27 @@ export function SettingsPage() {
     void load();
   }, [load]);
 
-  function handleSave() {
-    toast.show(
-      "Persistência de settings ainda não está disponível (API retorna 501)."
-    );
+  async function handleSave() {
+    if (!features) return;
+    setSaving(true);
+    try {
+      const updated = await updateAdminSettings({
+        brandName,
+        locale,
+        features,
+      });
+      setSettings(updated);
+      setBrandName(updated.brand.name);
+      setLocale(updated.brand.locale);
+      setFeatures({ ...updated.features });
+      toast.show("Settings salvos");
+    } catch (err) {
+      toast.show(
+        err instanceof Error ? err.message : "Falha ao salvar settings"
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleReset() {
@@ -72,7 +85,7 @@ export function SettingsPage() {
     );
   }
 
-  if (error || !settings) {
+  if (error || !settings || !features) {
     return (
       <div className="space-y-6">
         <PageHeader
@@ -93,12 +106,6 @@ export function SettingsPage() {
         title="Settings"
         description="Configurações internas do SaaS."
       />
-
-      {settings.note ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          {settings.note}
-        </p>
-      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
         <aside className="rounded-lg border border-marka-graphite/10 bg-marka-white p-2">
@@ -154,25 +161,27 @@ export function SettingsPage() {
               </>
             ) : null}
 
-            {section === "Feature Flags" && features ? (
-              Object.entries(features).map(([key, enabled]) => (
-                <label
-                  key={key}
-                  className="flex items-center justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
-                >
-                  <span className="text-sm capitalize">{key.replace(/([A-Z])/g, " $1")}</span>
-                  <input
-                    type="checkbox"
-                    checked={enabled}
-                    onChange={(e) =>
-                      setFeatures((prev) =>
-                        prev ? { ...prev, [key]: e.target.checked } : prev
-                      )
-                    }
-                  />
-                </label>
-              ))
-            ) : null}
+            {section === "Feature Flags"
+              ? Object.entries(features).map(([key, enabled]) => (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
+                  >
+                    <span className="text-sm capitalize">
+                      {key.replace(/([A-Z])/g, " $1")}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={(e) =>
+                        setFeatures((prev) =>
+                          prev ? { ...prev, [key]: e.target.checked } : prev
+                        )
+                      }
+                    />
+                  </label>
+                ))
+              : null}
 
             {section === "System" ? (
               <>
@@ -197,8 +206,12 @@ export function SettingsPage() {
           </div>
 
           <div className="mt-4 flex gap-2">
-            <Button size="sm" onClick={handleSave}>
-              Salvar
+            <Button
+              size="sm"
+              disabled={saving}
+              onClick={() => void handleSave()}
+            >
+              {saving ? "Salvando…" : "Salvar"}
             </Button>
             <Button size="sm" variant="secondary" onClick={handleReset}>
               Reset

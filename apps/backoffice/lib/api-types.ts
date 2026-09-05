@@ -463,7 +463,7 @@ export interface AdminSettingsDto {
     marketingCampaigns: boolean;
     onlinePayments: boolean;
   };
-  note: string;
+  note: string | null;
 }
 
 export interface AdminImpersonateResponseDto {
