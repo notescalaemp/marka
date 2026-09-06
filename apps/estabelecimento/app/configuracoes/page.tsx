@@ -6,7 +6,7 @@ import { Card } from "@marka/ui/card";
 import { PageHeader } from "@marka/ui/page-header";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/ToastProvider";
-import type { Role } from "@/lib/types";
+import type { Establishment, Role } from "@/lib/types";
 
 const TABS = [
   "estabelecimento",
@@ -29,7 +29,7 @@ export default function ConfigPage() {
     establishment,
     updateEstablishment,
     role,
-    userEmail,
+    user,
     members,
     inviteMember,
     updateMember,
@@ -53,8 +53,8 @@ export default function ConfigPage() {
             onClick={() => setTab(t)}
             className={
               tab === t
-                ? "rounded-md bg-marka-black px-3 py-1.5 text-sm text-marka-white"
-                : "rounded-md border border-marka-graphite/20 px-3 py-1.5 text-sm"
+                ? "pill pill-active"
+                : "pill"
             }
           >
             {t}
@@ -70,24 +70,24 @@ export default function ConfigPage() {
             <label className="block space-y-1 text-sm">
               <span className="text-xs text-marka-gray">Nome</span>
               <input
-                className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-                value={establishment.name}
+                className="field"
+                value={establishment?.name ?? ""}
                 onChange={(e) => updateEstablishment({ name: e.target.value })}
               />
             </label>
             <label className="block space-y-1 text-sm">
               <span className="text-xs text-marka-gray">Telefone</span>
               <input
-                className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-                value={establishment.phone}
+                className="field"
+                value={establishment?.phone ?? ""}
                 onChange={(e) => updateEstablishment({ phone: e.target.value })}
               />
             </label>
             <label className="block space-y-1 text-sm sm:col-span-2">
               <span className="text-xs text-marka-gray">Endereço</span>
               <input
-                className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-                value={establishment.address}
+                className="field"
+                value={establishment?.address ?? ""}
                 onChange={(e) =>
                   updateEstablishment({ address: e.target.value })
                 }
@@ -96,19 +96,19 @@ export default function ConfigPage() {
             <label className="block space-y-1 text-sm">
               <span className="text-xs text-marka-gray">Cidade</span>
               <input
-                className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-                value={establishment.city}
+                className="field"
+                value={establishment?.city ?? ""}
                 onChange={(e) => updateEstablishment({ city: e.target.value })}
               />
             </label>
             <label className="block space-y-1 text-sm">
               <span className="text-xs text-marka-gray">Categoria</span>
               <select
-                className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-                value={establishment.category}
+                className="field"
+                value={establishment?.category ?? "nails"}
                 onChange={(e) =>
                   updateEstablishment({
-                    category: e.target.value as typeof establishment.category,
+                    category: e.target.value as Establishment["category"],
                   })
                 }
               >
@@ -123,7 +123,7 @@ export default function ConfigPage() {
         {tab === "perfil" && (
           <div className="space-y-2 text-sm">
             <p>
-              Conta: <strong>{userEmail || "—"}</strong>
+              Conta: <strong>{user?.email || "—"}</strong>
             </p>
             <p>
               Role atual: <strong>{role}</strong>
@@ -138,20 +138,20 @@ export default function ConfigPage() {
           <div className="space-y-4">
             <div className="grid gap-2 sm:grid-cols-3">
               <input
-                className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+                className="field"
                 placeholder="Nome"
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
               />
               <input
-                className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+                className="field"
                 placeholder="E-mail"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
               <select
-                className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+                className="field"
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
               >
@@ -179,7 +179,7 @@ export default function ConfigPage() {
               Convidar membro
             </Button>
 
-            <ul className="divide-y divide-marka-graphite/10">
+            <ul className="divide-y divide-black/[0.06]">
               {members.map((m) => (
                 <li
                   key={m.id}
@@ -193,7 +193,7 @@ export default function ConfigPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <select
-                      className="h-9 rounded-md border border-marka-graphite/20 px-2 text-xs"
+                      className="field-sm"
                       value={m.role}
                       disabled={m.role === "OWNER"}
                       onChange={(e) =>
@@ -229,8 +229,8 @@ export default function ConfigPage() {
           <label className="block space-y-1 text-sm">
             <span className="text-xs text-marka-gray">Funcionamento</span>
             <input
-              className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-              value={establishment.hours}
+              className="field"
+              value={establishment?.hours ?? ""}
               onChange={(e) => updateEstablishment({ hours: e.target.value })}
             />
           </label>
@@ -290,7 +290,7 @@ export default function ConfigPage() {
 
         {tab === "seguranca" && (
           <div className="space-y-2 text-sm">
-            <p>Sessão mock ativa para {userEmail || "visitante"}.</p>
+            <p>Sessão mock ativa para {user?.email || "visitante"}.</p>
             <p className="text-marka-gray">
               2FA e reset de senha entram com a API de auth.
             </p>

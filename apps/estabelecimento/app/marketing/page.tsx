@@ -23,13 +23,13 @@ export default function MarketingPage() {
       <Card className="space-y-3 p-4">
         <h2 className="font-semibold">Nova campanha</h2>
         <input
-          className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+          className="field"
           placeholder="Nome"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <select
-          className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+          className="field"
           value={type}
           onChange={(e) => setType(e.target.value)}
         >
@@ -52,7 +52,7 @@ export default function MarketingPage() {
         </Button>
       </Card>
 
-      <div className="space-y-2">
+      <div className="stagger space-y-2">
         {campaigns.map((c) => (
           <Card key={c.id} className="p-4">
             <div className="flex items-start justify-between gap-2">

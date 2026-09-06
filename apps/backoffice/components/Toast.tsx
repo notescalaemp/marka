@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 type ToastContextValue = {
@@ -32,15 +33,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed bottom-20 left-1/2 z-50 flex w-full max-w-md -translate-x-1/2 flex-col gap-2 px-4">
+      <div className="fixed bottom-6 left-1/2 z-50 flex w-full max-w-md -translate-x-1/2 flex-col gap-2 px-4">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              "rounded-md bg-marka-black px-4 py-3 text-sm text-marka-white shadow-lg"
+              "flex animate-slide-in-right items-center gap-2.5 rounded-xl border border-black/[0.06] bg-white/95 px-4 py-3 text-sm text-marka-black shadow-pop backdrop-blur-xl"
             )}
             role="status"
           >
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-marka-green" />
             {t.message}
           </div>
         ))}

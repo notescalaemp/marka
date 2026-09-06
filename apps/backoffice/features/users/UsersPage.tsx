@@ -117,7 +117,7 @@ export function UsersPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -125,7 +125,7 @@ export function UsersPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <input
             value={searchInput}
@@ -134,7 +134,7 @@ export function UsersPage() {
               if (e.key === "Enter") applySearch();
             }}
             placeholder="Buscar..."
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Buscar usuários"
           />
           <select
@@ -142,7 +142,7 @@ export function UsersPage() {
             onChange={(e) =>
               onFilterChange(setType, e.target.value as (typeof USER_TYPES)[number])
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro tipo"
           >
             {USER_TYPES.map((t) => (
@@ -156,7 +156,7 @@ export function UsersPage() {
             onChange={(e) =>
               onFilterChange(setStatus, e.target.value as (typeof STATUS_FILTERS)[number])
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro status"
           >
             {STATUS_FILTERS.map((s) => (
@@ -185,45 +185,45 @@ export function UsersPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Usuário</th>
-                    <th className="px-2 py-2 font-medium">Estabelecimento</th>
-                    <th className="px-2 py-2 font-medium">Tipo</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 font-medium">Último login</th>
-                    <th className="px-2 py-2 font-medium">Criaç.</th>
-                    <th className="px-2 py-2 font-medium">Atividade</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Usuário</th>
+                    <th className="table-head-cell">Estabelecimento</th>
+                    <th className="table-head-cell">Tipo</th>
+                    <th className="table-head-cell">Status</th>
+                    <th className="table-head-cell">Último login</th>
+                    <th className="table-head-cell">Criaç.</th>
+                    <th className="table-head-cell">Atividade</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((u) => (
                     <tr
                       key={u.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2 font-medium text-marka-black">{u.name}</td>
-                      <td className="px-2 py-2 text-marka-graphite">
+                      <td className="table-cell font-medium text-marka-black">{u.name}</td>
+                      <td className="table-cell text-marka-graphite">
                         {u.establishment ?? "—"}
                       </td>
-                      <td className="px-2 py-2">{u.type}</td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">{u.type}</td>
+                      <td className="table-cell">
                         <span
                           className={
                             u.status === "ativo"
-                              ? "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-800"
+                              ? "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-marka-green-soft text-marka-green-dark"
                               : "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-marka-off text-marka-graphite"
                           }
                         >
                           {u.status}
                         </span>
                       </td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell text-marka-gray">
                         {u.lastLogin ? formatDateTime(u.lastLogin) : "—"}
                       </td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell text-marka-gray">
                         {formatDate(u.createdAt)}
                       </td>
-                      <td className="px-2 py-2 text-marka-gray">{u.activity}</td>
+                      <td className="table-cell text-marka-gray">{u.activity}</td>
                     </tr>
                   ))}
                 </tbody>

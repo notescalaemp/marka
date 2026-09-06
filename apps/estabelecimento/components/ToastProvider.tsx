@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { cn } from "@marka/ui/cn";
 
 type ToastContextValue = {
@@ -35,15 +36,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         className={cn(
-          "fixed bottom-20 left-1/2 z-50 flex w-full max-w-md -translate-x-1/2 flex-col gap-2 px-4"
+          "fixed bottom-20 left-1/2 z-50 flex w-full max-w-md -translate-x-1/2 flex-col gap-2 px-4 lg:bottom-6"
         )}
       >
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="rounded-md bg-marka-black px-4 py-3 text-sm text-marka-white shadow-lg"
+            className="flex animate-slide-in-right items-center gap-2.5 rounded-xl border border-black/[0.06] bg-white/95 px-4 py-3 text-sm text-marka-black shadow-pop backdrop-blur-xl"
             role="status"
           >
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-marka-green" />
             {t.message}
           </div>
         ))}

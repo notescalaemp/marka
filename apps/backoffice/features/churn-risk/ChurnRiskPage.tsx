@@ -95,7 +95,7 @@ export function ChurnRiskPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -103,7 +103,7 @@ export function ChurnRiskPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-2">
           {(["all", "high", "medium", "low"] as const).map((r) => (
             <button
@@ -112,8 +112,8 @@ export function ChurnRiskPage() {
               onClick={() => setRisk(r)}
               className={`rounded-md border px-2.5 py-1 text-xs capitalize transition-colors ${
                 risk === r
-                  ? "border-marka-black bg-marka-black text-marka-white"
-                  : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                  ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                  : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
               }`}
             >
               {r}
@@ -138,47 +138,47 @@ export function ChurnRiskPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Estabelecimento</th>
-                    <th className="px-2 py-2 font-medium">Plano</th>
-                    <th className="px-2 py-2 font-medium">MRR</th>
-                    <th className="px-2 py-2 font-medium">Risk score</th>
-                    <th className="px-2 py-2 font-medium">Último login</th>
-                    <th className="px-2 py-2 font-medium">Utilização</th>
-                    <th className="px-2 py-2 font-medium">Δ Uso</th>
-                    <th className="px-2 py-2 font-medium">Motivos</th>
-                    <th className="px-2 py-2 font-medium">Ações</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Estabelecimento</th>
+                    <th className="table-head-cell">Plano</th>
+                    <th className="table-head-cell">MRR</th>
+                    <th className="table-head-cell">Risk score</th>
+                    <th className="table-head-cell">Último login</th>
+                    <th className="table-head-cell">Utilização</th>
+                    <th className="table-head-cell">Δ Uso</th>
+                    <th className="table-head-cell">Motivos</th>
+                    <th className="table-head-cell">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r) => (
                     <tr
                       key={r.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2 font-medium">{r.establishment}</td>
-                      <td className="px-2 py-2">{r.plan}</td>
-                      <td className="px-2 py-2">{formatPrice(r.mrr)}</td>
-                      <td className="px-2 py-2">{r.riskScore}</td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell font-medium text-marka-black">{r.establishment}</td>
+                      <td className="table-cell">{r.plan}</td>
+                      <td className="table-cell">{formatPrice(r.mrr)}</td>
+                      <td className="table-cell">{r.riskScore}</td>
+                      <td className="table-cell text-marka-gray">
                         {r.lastLogin ? formatDateTime(r.lastLogin) : "—"}
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">
                         {r.utilization == null ? "—" : `${r.utilization}%`}
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">
                         {r.utilizationDelta == null
                           ? "—"
                           : `${r.utilizationDelta >= 0 ? "+" : ""}${r.utilizationDelta}%`}
                       </td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell text-marka-gray">
                         {r.reasons.length ? r.reasons.join(", ") : "—"}
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">
                         <div className="flex gap-2">
                           <Link
                             href={`/establishments/${r.id}`}
-                            className="text-xs text-emerald-700 underline"
+                            className="text-xs text-marka-green-dark underline"
                           >
                             Visualizar
                           </Link>
@@ -204,7 +204,7 @@ export function ChurnRiskPage() {
                           </button>
                           <button
                             type="button"
-                            className="text-xs text-emerald-700 underline"
+                            className="text-xs text-marka-green-dark underline"
                           >
                             Contato
                           </button>

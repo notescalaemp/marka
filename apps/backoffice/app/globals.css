@@ -9,9 +9,145 @@
 
   html {
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-marka-off text-marka-black font-sans;
+  }
+
+  ::selection {
+    @apply bg-marka-green/20 text-marka-black;
+  }
+
+  /* Slim, unobtrusive scrollbars for dense data views */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(11, 11, 11, 0.16) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(11, 11, 11, 0.16);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(11, 11, 11, 0.28);
+  }
+}
+
+@layer components {
+  /* Liquid-glass surfaces for chrome (sidebar / topbar / dialogs) */
+  .glass-panel {
+    @apply border border-white/60 bg-white/70 backdrop-blur-2xl backdrop-saturate-150;
+  }
+
+  /* Standard content card */
+  .card {
+    @apply rounded-2xl border border-black/[0.06] bg-white shadow-card;
+  }
+
+  .card-interactive {
+    @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover;
+  }
+
+  .card-soft {
+    @apply rounded-2xl border border-marka-green/15 bg-marka-green-soft;
+  }
+
+  /* Form controls */
+  .field {
+    @apply h-10 w-full rounded-lg border border-black/10 bg-white px-3 text-sm text-marka-black outline-none transition-shadow placeholder:text-marka-gray;
+  }
+  .field:focus {
+    @apply border-marka-green shadow-glow;
+  }
+  .field-sm {
+    @apply h-9 rounded-lg border border-black/10 bg-white px-2.5 text-xs text-marka-black outline-none transition-shadow placeholder:text-marka-gray;
+  }
+  .field-sm:focus {
+    @apply border-marka-green shadow-glow;
+  }
+
+  /* Filter pills with an animated active indicator */
+  .filter-pill {
+    @apply relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium text-marka-graphite transition-all duration-200 hover:border-marka-green/40 hover:text-marka-green;
+  }
+  .filter-pill[data-active="true"] {
+    @apply border-transparent bg-marka-gradient text-white shadow-card-hover;
+  }
+
+  /* Table rhythm */
+  .table-head-row {
+    @apply border-b border-black/[0.07] text-left text-[11px] font-semibold uppercase tracking-wide text-marka-gray;
+  }
+  .table-head-cell {
+    @apply px-3 py-2.5;
+  }
+  .table-row {
+    @apply border-b border-black/[0.045] transition-colors duration-150 last:border-0 hover:bg-marka-green-soft/50;
+  }
+  .table-cell {
+    @apply px-3 py-2.5 align-middle;
+  }
+
+  /* Cascading entrance for grids/lists of siblings */
+  .stagger > * {
+    opacity: 0;
+    animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 240ms;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 300ms;
+  }
+  .stagger > *:nth-child(n + 7) {
+    animation-delay: 340ms;
+  }
+
+  /* Shimmering skeleton, replaces flat pulse */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden bg-marka-graphite/[0.08];
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .stagger > * {
+    opacity: 1 !important;
   }
 }

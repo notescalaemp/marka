@@ -15,7 +15,7 @@ export default function ProfessionalDetailPage() {
 
   if (!p) {
     return (
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-6">
+      <div className="card p-6">
         <h1 className="text-lg font-semibold">Profissional não encontrado</h1>
         <Link href="/profissionais" className="mt-2 inline-block text-sm">
           Voltar
@@ -47,7 +47,7 @@ export default function ProfessionalDetailPage() {
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="stagger grid gap-3 md:grid-cols-4">
         <Card className="p-4">
           <p className="text-xs text-marka-gray">Comissão</p>
           <p className="mt-1 text-lg font-semibold">

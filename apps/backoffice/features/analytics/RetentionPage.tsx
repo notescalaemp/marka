@@ -70,8 +70,8 @@ export function RetentionPage() {
             onClick={() => setPlan(p)}
             className={`rounded-md border px-2.5 py-1 text-xs capitalize transition-colors ${
               plan === p
-                ? "border-marka-black bg-marka-black text-marka-white"
-                : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
             }`}
           >
             {p}
@@ -79,7 +79,7 @@ export function RetentionPage() {
         ))}
       </div>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <h2 className="text-sm font-medium text-marka-graphite">
           Cohort analysis
         </h2>
@@ -91,10 +91,10 @@ export function RetentionPage() {
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
-              <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                <th className="px-2 py-2 font-medium">Cohort</th>
+              <tr className="table-head-row">
+                <th className="table-head-cell">Cohort</th>
                 {MONTH_LABELS.map((m) => (
-                  <th key={m} className="px-2 py-2 font-medium">
+                  <th key={m} className="table-head-cell">
                     {m}
                   </th>
                 ))}
@@ -104,13 +104,13 @@ export function RetentionPage() {
               {cohorts.map((row) => (
                 <tr
                   key={row.month}
-                  className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                  className="table-row"
                 >
-                  <td className="px-2 py-2 font-medium">{row.month}</td>
+                  <td className="table-cell font-medium text-marka-black">{row.month}</td>
                   {MONTH_KEYS.map((key) => {
                     const value = row[key];
                     return (
-                      <td key={key} className="px-2 py-2 text-marka-graphite">
+                      <td key={key} className="table-cell text-marka-graphite">
                         {value === null ? "—" : `${value}%`}
                       </td>
                     );

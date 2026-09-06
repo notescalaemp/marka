@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-marka-white text-marka-black font-sans;
+  }
+
+  ::selection {
+    @apply bg-marka-green/15 text-marka-black;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 19, 26, 0.14) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(16, 19, 26, 0.14);
+    border-radius: 999px;
+  }
+}
+
+@layer components {
+  /* Soft frosted surface for the header once scrolled */
+  .glass-panel {
+    @apply border border-marka-line/80 bg-white/80 backdrop-blur-xl backdrop-saturate-150;
+  }
+
+  /* Soft, blurred light — the only "glow" allowed: diffuse, low-opacity, never saturated */
+  .aura {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    pointer-events: none;
+  }
+
+  .card {
+    @apply rounded-3xl border border-marka-line bg-white shadow-card;
+  }
+
+  /* Explicit transform (not Tailwind's custom-property translate composition) so the
+     hover lift is a plain, robust transition regardless of what else is applied. */
+  .card-interactive {
+    transition: transform 300ms cubic-bezier(0, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0, 0, 0.2, 1),
+      border-color 300ms cubic-bezier(0, 0, 0.2, 1);
+  }
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: rgb(156 213 192 / 0.7);
+    box-shadow: 0 2px 4px rgba(16, 19, 26, 0.05), 0 24px 48px -26px rgba(48, 149, 119, 0.2);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-interactive {
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .card-interactive:hover {
+      transform: none;
+    }
+  }
+
+  .card-tint {
+    @apply rounded-3xl border border-marka-green/15 bg-marka-green-tint;
+  }
+
+  .section-eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-marka-green/20 bg-marka-green-tint px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-marka-green;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marka-green/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn text-white shadow-button hover:brightness-[1.04] active:brightness-[0.98];
+    background: linear-gradient(135deg, #309577 0%, #3a9f81 100%);
+  }
+
+  .btn-secondary {
+    @apply btn border border-marka-line bg-white text-marka-black shadow-xs hover:border-marka-green/40 hover:text-marka-green;
+  }
+
+  /* On-color variants, for use over the solid green hero card only */
+  .btn-hero-primary {
+    @apply btn bg-white text-marka-green shadow-[0_1px_2px_rgba(16,19,26,0.06),0_10px_20px_-12px_rgba(16,19,26,0.25)] hover:brightness-[0.98] active:brightness-95;
+  }
+
+  .btn-hero-secondary {
+    @apply btn border border-white/35 bg-white/10 text-white hover:bg-white/[0.16];
+  }
+
+  .btn-ghost {
+    @apply btn text-marka-black hover:bg-marka-off;
+  }
+
+  .field {
+    @apply h-11 w-full rounded-xl border border-marka-line bg-white px-4 text-sm text-marka-black outline-none transition-shadow placeholder:text-marka-gray/70;
+  }
+  .field:focus {
+    @apply border-marka-green/50 shadow-ring;
+  }
+
+  /* Scroll-reveal primitives, toggled via IntersectionObserver in <Reveal>.
+     Both fire once, only when the element enters the viewport, and rely
+     solely on transform/opacity for performance. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Cascading entrance for grids/lists of siblings — same mechanism as
+     .reveal, gated by the parent's data-visible so children only animate
+     once the group scrolls into view. */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .stagger[data-visible="true"] > * {
+    opacity: 1;
+  }
+  /* :not(:hover) so this never fights a child's own hover transform
+     (e.g. .card-interactive:hover) once the group has become visible. */
+  .stagger[data-visible="true"] > *:not(:hover) {
+    transform: translateY(0);
+  }
+  .stagger > *:nth-child(1) { transition-delay: 0ms; }
+  .stagger > *:nth-child(2) { transition-delay: 70ms; }
+  .stagger > *:nth-child(3) { transition-delay: 140ms; }
+  .stagger > *:nth-child(4) { transition-delay: 210ms; }
+  .stagger > *:nth-child(5) { transition-delay: 280ms; }
+  .stagger > *:nth-child(n + 6) { transition-delay: 330ms; }
+
+  /* Workflow section: card/detail entrance and the connecting line between
+     steps. Same opacity+transform-only mechanism as .reveal, but each
+     element's transition-delay is computed in JS to form the sequential
+     "card → connection → card" narrative. */
+  .wf-reveal {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .wf-reveal[data-visible="true"] {
+    opacity: 1;
+  }
+  /* :not(:hover) so this never fights a card's own hover transform
+     (.card-interactive:hover) once it has become visible. */
+  .wf-reveal[data-visible="true"]:not(:hover) {
+    transform: translateY(0) scale(1);
+  }
+  /* Connector line: axis (vertical/horizontal) and transform-origin are set
+     inline per instance since the workflow branches in different directions;
+     this class only owns the transition itself. */
+  .wf-line {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Very subtle Liquid Glass card surface: translucent white + blur, kept
+     opaque enough (80%) that content stays fully legible, with a soft
+     diagonal sheen instead of any strong reflection. */
+  .card-glass {
+    @apply relative overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-card backdrop-blur-xl backdrop-saturate-150;
+  }
+  .card-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%);
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+  .stagger > *,
+  .reveal,
+  .wf-reveal,
+  .wf-line {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

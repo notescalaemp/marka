@@ -23,21 +23,21 @@ export default function ProdutosPage() {
       <Card className="space-y-3 p-4">
         <h2 className="font-semibold">Novo produto</h2>
         <input
-          className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+          className="field"
           placeholder="Nome"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <div className="grid gap-2 md:grid-cols-2">
           <input
-            className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field"
             type="number"
             placeholder="Estoque"
             value={stock}
             onChange={(e) => setStock(Number(e.target.value))}
           />
           <input
-            className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field"
             type="number"
             placeholder="Preço"
             value={price}
@@ -56,7 +56,7 @@ export default function ProdutosPage() {
         </Button>
       </Card>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="stagger grid gap-3 md:grid-cols-2">
         {products.map((p) => (
           <Card key={p.id} className="p-4">
             <p className="font-semibold">{p.name}</p>

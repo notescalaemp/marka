@@ -115,7 +115,7 @@ export function EstablishmentsPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">
@@ -125,7 +125,7 @@ export function EstablishmentsPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <div className="flex min-w-[200px] flex-1 gap-2">
             <input
@@ -136,7 +136,7 @@ export function EstablishmentsPage() {
                 if (e.key === "Enter") applySearch();
               }}
               placeholder="Buscar estabelecimento…"
-              className="w-full rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="w-full field-sm"
               aria-label="Busca"
             />
             <Button size="sm" variant="secondary" onClick={applySearch}>
@@ -146,7 +146,7 @@ export function EstablishmentsPage() {
           <select
             value={plan}
             onChange={(e) => onFilterChange(setPlan, e.target.value)}
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro plano"
           >
             <option value="all">Todos os planos</option>
@@ -159,7 +159,7 @@ export function EstablishmentsPage() {
             onChange={(e) =>
               onFilterChange(setStatus, e.target.value as typeof status)
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro status"
           >
             {STATUS_FILTERS.map((s) => (
@@ -173,7 +173,7 @@ export function EstablishmentsPage() {
             onChange={(e) =>
               onFilterChange(setRisk, e.target.value as typeof risk)
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro risco"
           >
             <option value="all">Todos os riscos</option>
@@ -202,27 +202,27 @@ export function EstablishmentsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Estabelecimento</th>
-                    <th className="px-2 py-2 font-medium">Proprietário</th>
-                    <th className="px-2 py-2 font-medium">Plano</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 font-medium">MRR</th>
-                    <th className="px-2 py-2 font-medium">Entrada</th>
-                    <th className="px-2 py-2 font-medium">Último acesso</th>
-                    <th className="px-2 py-2 font-medium">Profis.</th>
-                    <th className="px-2 py-2 font-medium">Clientes</th>
-                    <th className="px-2 py-2 font-medium">Utilização</th>
-                    <th className="px-2 py-2 font-medium">Churn risk</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Estabelecimento</th>
+                    <th className="table-head-cell">Proprietário</th>
+                    <th className="table-head-cell">Plano</th>
+                    <th className="table-head-cell">Status</th>
+                    <th className="table-head-cell">MRR</th>
+                    <th className="table-head-cell">Entrada</th>
+                    <th className="table-head-cell">Último acesso</th>
+                    <th className="table-head-cell">Profis.</th>
+                    <th className="table-head-cell">Clientes</th>
+                    <th className="table-head-cell">Utilização</th>
+                    <th className="table-head-cell">Churn risk</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((e) => (
                     <tr
                       key={e.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2">
+                      <td className="table-cell">
                         <Link
                           href={`/establishments/${e.id}`}
                           className="font-medium text-marka-black hover:underline"
@@ -230,26 +230,26 @@ export function EstablishmentsPage() {
                           {e.name}
                         </Link>
                       </td>
-                      <td className="px-2 py-2 text-marka-graphite">
+                      <td className="table-cell text-marka-graphite">
                         {e.ownerName}
                       </td>
-                      <td className="px-2 py-2">{e.plan}</td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">{e.plan}</td>
+                      <td className="table-cell">
                         <StatusBadge status={e.status} />
                       </td>
-                      <td className="px-2 py-2">{formatPrice(e.mrr)}</td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell">{formatPrice(e.mrr)}</td>
+                      <td className="table-cell text-marka-gray">
                         {e.createdAt}
                       </td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell text-marka-gray">
                         {e.lastAccess}
                       </td>
-                      <td className="px-2 py-2">{e.professionals}</td>
-                      <td className="px-2 py-2">{e.customers}</td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">{e.professionals}</td>
+                      <td className="table-cell">{e.customers}</td>
+                      <td className="table-cell">
                         {e.utilization == null ? "—" : `${e.utilization}%`}
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="table-cell">
                         <span className="text-xs capitalize text-marka-graphite">
                           {riskLabel(e.churnRisk)}
                         </span>

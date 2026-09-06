@@ -17,12 +17,12 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1 border-b border-marka-graphite/10 pb-4 sm:flex-row sm:items-start sm:justify-between",
+        "flex flex-col gap-3 border-b border-black/[0.06] pb-5 sm:flex-row sm:items-start sm:justify-between",
         className
       )}
     >
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-marka-black">
+        <h1 className="text-2xl font-semibold tracking-tight text-marka-black">
           {title}
         </h1>
         {description ? (
@@ -30,9 +30,7 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0">
-          {actions}
-        </div>
+        <div className="flex flex-wrap items-center gap-2">{actions}</div>
       ) : null}
     </div>
   );

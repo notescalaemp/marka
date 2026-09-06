@@ -26,7 +26,7 @@ export default function CrmPage() {
         description="Segmentos acionáveis"
       />
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="stagger grid gap-3 md:grid-cols-2">
         <InsightCard
           title={`${segments.risco.length + segments.inativos.length} clientes atrasados para retornar`}
           explanation="Segmentos em risco e inativos — priorize reativação."
@@ -45,7 +45,7 @@ export default function CrmPage() {
         />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="stagger grid gap-3 md:grid-cols-3">
         {Object.entries(segments).map(([key, list]) => (
           <Card key={key} className="p-4">
             <div className="mb-2 flex items-center justify-between">

@@ -25,12 +25,16 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-marka-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-marka-black/45 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
+      onClick={onCancel}
     >
-      <div className="w-full max-w-md rounded-lg border border-marka-graphite/10 bg-marka-white p-5 shadow-lg">
+      <div
+        className="w-full max-w-md animate-scale-in rounded-2xl border border-black/[0.06] bg-white p-5 shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 id="confirm-title" className="text-base font-semibold text-marka-black">
           {title}
         </h2>

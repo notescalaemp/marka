@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@marka/ui/button";
 import { Input } from "@marka/ui/input";
-import { MarkaMark } from "@/components/MarkaMark";
 import { useStore } from "@/lib/store";
 
 export default function RegisterPage() {
@@ -40,18 +38,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-marka-off px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-marka-graphite/10 bg-marka-white p-6"
-      >
-        <div className="space-y-1 text-center">
-          <MarkaMark className="mx-auto text-marka-black" />
-          <p className="text-sm text-marka-gray">Criar conta do estabelecimento</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-marka-navy lg:text-[28px]">
+          Comece com o Marka IA
+        </h1>
+        <p className="mt-1.5 text-sm text-marka-slate">
+          Crie sua conta e comece a transformar sua operação.
+        </p>
+      </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-marka-graphite" htmlFor="name">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-marka-slate" htmlFor="name">
             Nome
           </label>
           <Input
@@ -62,8 +61,8 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-marka-graphite" htmlFor="email">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-marka-slate" htmlFor="email">
             E-mail
           </label>
           <Input
@@ -76,11 +75,8 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          <label
-            className="text-xs font-medium text-marka-graphite"
-            htmlFor="password"
-          >
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-marka-slate" htmlFor="password">
             Senha
           </label>
           <Input
@@ -94,18 +90,13 @@ export default function RegisterPage() {
           />
         </div>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        ) : null}
 
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" size="lg" className="w-full" loading={submitting}>
           {submitting ? "Criando..." : "Criar conta"}
         </Button>
-
-        <p className="text-center text-xs text-marka-gray">
-          Já tem conta?{" "}
-          <Link href="/login" className="underline">
-            Entrar
-          </Link>
-        </p>
       </form>
     </div>
   );

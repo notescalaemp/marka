@@ -37,7 +37,7 @@ export default function DashboardPage() {
         description={`${establishment?.name ?? "Estabelecimento"} · visão do dia`}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <p className="text-xs text-marka-gray">Agenda hoje</p>
           <p className="mt-1 text-2xl font-semibold">
@@ -75,7 +75,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="stagger grid gap-3 lg:grid-cols-2">
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">Agenda de hoje</h2>
@@ -96,7 +96,7 @@ export default function DashboardPage() {
                 return (
                   <li
                     key={a.id}
-                    className="flex items-start justify-between gap-2 border-b border-marka-graphite/10 pb-2 last:border-0"
+                    className="flex items-start justify-between gap-2 rounded-xl border border-black/[0.05] px-3 py-2.5 transition-colors hover:bg-marka-off/70"
                   >
                     <div>
                       <p className="text-sm font-medium">

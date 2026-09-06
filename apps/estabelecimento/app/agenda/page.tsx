@@ -97,7 +97,7 @@ export default function AgendaPage() {
       <Card className="flex flex-wrap items-center gap-3 p-3">
         <label className="text-sm text-marka-gray">Profissional</label>
         <select
-          className="h-9 rounded-md border border-marka-graphite/20 px-2 text-sm"
+          className="field-sm"
           value={professionalId}
           onChange={(e) => setProfessionalId(e.target.value)}
         >
@@ -110,7 +110,7 @@ export default function AgendaPage() {
         </select>
         <label className="text-sm text-marka-gray">Status</label>
         <select
-          className="h-9 rounded-md border border-marka-graphite/20 px-2 text-sm"
+          className="field-sm"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
@@ -134,7 +134,7 @@ export default function AgendaPage() {
           }
         />
       ) : (
-        <div className="space-y-2">
+        <div className="stagger space-y-2">
           {filtered.map((a) => {
             const client = clients.find((c) => c.id === a.clientId);
             const service = services.find((s) => s.id === a.serviceId);
@@ -209,8 +209,8 @@ export default function AgendaPage() {
                   onClick={() => toggleBlockedSlot(key)}
                   className={
                     blocked
-                      ? "rounded-md bg-marka-black px-3 py-1.5 text-xs text-marka-white"
-                      : "rounded-md border border-marka-graphite/20 px-3 py-1.5 text-xs"
+                      ? "pill pill-active text-xs px-3 py-1.5"
+                      : "pill text-xs px-3 py-1.5"
                   }
                 >
                   {key}

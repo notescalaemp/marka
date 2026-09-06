@@ -104,8 +104,8 @@ export default function NovoAgendamentoPage() {
             key={s}
             className={
               i <= stepIndex
-                ? "h-1.5 flex-1 rounded bg-marka-black"
-                : "h-1.5 flex-1 rounded bg-marka-graphite/10"
+                ? "h-1.5 flex-1 rounded-full bg-marka-gradient"
+                : "h-1.5 flex-1 rounded-full bg-marka-graphite/10"
             }
           />
         ))}
@@ -128,8 +128,8 @@ export default function NovoAgendamentoPage() {
                 onClick={() => setClientId(c.id)}
                 className={
                   clientId === c.id
-                    ? "w-full rounded-md border-2 border-marka-black bg-marka-off p-3 text-left"
-                    : "w-full rounded-md border border-marka-graphite/10 p-3 text-left hover:bg-marka-off"
+                    ? "w-full rounded-xl border-2 border-marka-green bg-marka-green-soft p-3 text-left transition-colors"
+                    : "w-full rounded-xl border border-black/10 p-3 text-left transition-colors hover:border-marka-green/30 hover:bg-marka-off"
                 }
               >
                 <div className="font-medium">{c.name}</div>
@@ -154,8 +154,8 @@ export default function NovoAgendamentoPage() {
                 }}
                 className={
                   professionalId === p.id
-                    ? "w-full rounded-md border-2 border-marka-black bg-marka-off p-3 text-left"
-                    : "w-full rounded-md border border-marka-graphite/10 p-3 text-left hover:bg-marka-off"
+                    ? "w-full rounded-xl border-2 border-marka-green bg-marka-green-soft p-3 text-left transition-colors"
+                    : "w-full rounded-xl border border-black/10 p-3 text-left transition-colors hover:border-marka-green/30 hover:bg-marka-off"
                 }
               >
                 <div className="font-medium">{p.name}</div>
@@ -179,8 +179,8 @@ export default function NovoAgendamentoPage() {
                 onClick={() => setServiceId(s.id)}
                 className={
                   serviceId === s.id
-                    ? "w-full rounded-md border-2 border-marka-black bg-marka-off p-3 text-left"
-                    : "w-full rounded-md border border-marka-graphite/10 p-3 text-left hover:bg-marka-off"
+                    ? "w-full rounded-xl border-2 border-marka-green bg-marka-green-soft p-3 text-left transition-colors"
+                    : "w-full rounded-xl border border-black/10 p-3 text-left transition-colors hover:border-marka-green/30 hover:bg-marka-off"
                 }
               >
                 <div className="font-medium">{s.name}</div>
@@ -201,7 +201,7 @@ export default function NovoAgendamentoPage() {
           <p className="text-sm font-medium">Data e horário</p>
           <input
             type="date"
-            className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
@@ -213,8 +213,8 @@ export default function NovoAgendamentoPage() {
                 onClick={() => setTime(t)}
                 className={
                   time === t
-                    ? "rounded-md bg-marka-black p-3 text-sm text-marka-white"
-                    : "rounded-md border border-marka-graphite/10 p-3 text-sm"
+                    ? "rounded-xl bg-marka-gradient p-3 text-sm font-medium text-white shadow-card-hover"
+                    : "rounded-xl border border-black/10 p-3 text-sm transition-colors hover:border-marka-green/30 hover:bg-marka-off"
                 }
               >
                 {t}

@@ -16,7 +16,7 @@ export default function EstoquePage() {
         description="Alertas e reposição"
       />
 
-      <div className="space-y-2">
+      <div className="stagger space-y-2">
         {products.map((p) => {
           const daysLeft =
             p.minStock > 0

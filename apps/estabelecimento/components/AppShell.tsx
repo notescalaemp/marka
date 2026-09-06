@@ -11,7 +11,13 @@ import { useStore } from "@/lib/store";
 import type { Permission, Role } from "@/lib/types";
 import { ErrorState } from "./ErrorState";
 
-const PUBLIC_ROUTES = ["/login", "/register", "/convite"];
+const PUBLIC_ROUTES = [
+  "/login",
+  "/register",
+  "/convite",
+  "/esqueci-senha",
+  "/redefinir-senha",
+];
 
 const ROUTE_PERMISSIONS: Record<string, Permission> = {
   "/dashboard": "dashboard",
@@ -96,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!ready || authStatus === "loading") {
     return (
       <ToastProvider>
-        <div className="flex min-h-screen items-center justify-center bg-marka-off text-sm text-marka-gray">
+        <div className="flex min-h-screen items-center justify-center bg-marka-off bg-marka-mesh bg-no-repeat text-sm text-marka-gray">
           Carregando sessão...
         </div>
       </ToastProvider>
@@ -110,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (authStatus !== "authenticated") {
     return (
       <ToastProvider>
-        <div className="flex min-h-screen items-center justify-center text-sm text-marka-gray">
+        <div className="flex min-h-screen items-center justify-center bg-marka-off bg-marka-mesh bg-no-repeat text-sm text-marka-gray">
           Redirecionando...
         </div>
       </ToastProvider>
@@ -119,11 +125,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="flex min-h-screen pb-16 lg:pb-0">
+      <div className="flex min-h-screen bg-marka-off bg-marka-mesh bg-no-repeat pb-16 lg:pb-0">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main className="flex-1 px-4 py-6 lg:px-6">
+          <main className="mx-auto w-full max-w-[1400px] flex-1 overflow-x-hidden px-4 py-6 lg:px-8 lg:py-8">
             {dataError ? (
               <div className="mb-4">
                 <ErrorState description={dataError} onRetry={() => void refreshAll()} />
@@ -132,9 +138,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {allowed ? (
               children
             ) : (
-              <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-6">
-                <h2 className="text-lg font-semibold">Acesso restrito</h2>
-                <p className="mt-1 text-sm text-marka-gray">
+              <div className="card mx-auto max-w-lg p-8 text-center">
+                <h2 className="text-lg font-semibold text-marka-black">Acesso restrito</h2>
+                <p className="mt-1.5 text-sm text-marka-gray">
                   Seu papel neste estabelecimento não permite acessar esta área.
                 </p>
               </div>

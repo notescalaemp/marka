@@ -84,7 +84,7 @@ export function AuditLogsPage() {
         description="Registro de ações administrativas."
       />
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <select
             value={result}
@@ -92,7 +92,7 @@ export function AuditLogsPage() {
               setPage(1);
               setResult(e.target.value as (typeof RESULT_FILTERS)[number]);
             }}
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro resultado"
           >
             {RESULT_FILTERS.map((s) => (
@@ -108,13 +108,13 @@ export function AuditLogsPage() {
               if (e.key === "Enter") applyFilters();
             }}
             placeholder="Filtrar ação..."
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro ação"
           />
           <select
             value={adminInput || "all"}
             onChange={(e) => setAdminInput(e.target.value)}
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro administrador"
           >
             {admins.map((s) => (
@@ -145,29 +145,29 @@ export function AuditLogsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Data/hora</th>
-                    <th className="px-2 py-2 font-medium">Administrador</th>
-                    <th className="px-2 py-2 font-medium">Ação</th>
-                    <th className="px-2 py-2 font-medium">Entidade</th>
-                    <th className="px-2 py-2 font-medium">Resultado</th>
-                    <th className="px-2 py-2 font-medium">IP</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Data/hora</th>
+                    <th className="table-head-cell">Administrador</th>
+                    <th className="table-head-cell">Ação</th>
+                    <th className="table-head-cell">Entidade</th>
+                    <th className="table-head-cell">Resultado</th>
+                    <th className="table-head-cell">IP</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((l) => (
                     <tr
                       key={l.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell text-marka-gray">
                         {formatDateTime(l.at)}
                       </td>
-                      <td className="px-2 py-2">{l.admin}</td>
-                      <td className="px-2 py-2">{l.action}</td>
-                      <td className="px-2 py-2">{l.entity}</td>
-                      <td className="px-2 py-2 capitalize">{l.result}</td>
-                      <td className="px-2 py-2 text-marka-gray">{l.ip}</td>
+                      <td className="table-cell">{l.admin}</td>
+                      <td className="table-cell">{l.action}</td>
+                      <td className="table-cell">{l.entity}</td>
+                      <td className="table-cell capitalize">{l.result}</td>
+                      <td className="table-cell text-marka-gray">{l.ip}</td>
                     </tr>
                   ))}
                 </tbody>

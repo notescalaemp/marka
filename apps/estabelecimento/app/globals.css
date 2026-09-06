@@ -1,3 +1,224 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-marka-off text-marka-black font-sans;
+  }
+
+  ::selection {
+    @apply bg-marka-green/20 text-marka-black;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(11, 11, 11, 0.16) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(11, 11, 11, 0.16);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(11, 11, 11, 0.28);
+  }
+}
+
+@layer components {
+  /* Liquid-glass surfaces for chrome (sidebar / topbar / dialogs) */
+  .glass-panel {
+    @apply border border-white/60 bg-white/70 backdrop-blur-2xl backdrop-saturate-150;
+  }
+
+  /* Raw card surface for spots not using the shared <Card> component */
+  .card {
+    @apply rounded-2xl border border-black/[0.06] bg-white shadow-card;
+  }
+
+  /* Form controls (raw <input>/<select> not going through the Input component) */
+  .field {
+    @apply h-10 w-full rounded-lg border border-black/10 bg-white px-3 text-sm text-marka-black outline-none transition-shadow placeholder:text-marka-gray;
+  }
+  .field:focus {
+    @apply border-marka-green shadow-glow;
+  }
+  .field-sm {
+    @apply h-9 rounded-lg border border-black/10 bg-white px-2.5 text-xs text-marka-black outline-none transition-shadow placeholder:text-marka-gray;
+  }
+  .field-sm:focus {
+    @apply border-marka-green shadow-glow;
+  }
+
+  /* Segmented filter / tab pill with a sliding active state */
+  .pill {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm font-medium text-marka-graphite transition-all duration-200 hover:border-marka-green/40 hover:text-marka-green;
+  }
+  .pill-active {
+    @apply border-transparent bg-marka-gradient text-white shadow-card-hover;
+  }
+
+  /* Cascading entrance for grids/lists of siblings */
+  .stagger > * {
+    opacity: 0;
+    animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 240ms;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 300ms;
+  }
+  .stagger > *:nth-child(n + 7) {
+    animation-delay: 340ms;
+  }
+
+  /* Shimmering skeleton, replaces flat pulse */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden bg-marka-graphite/[0.08];
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+/* Split-screen auth layout — desktop.
+   Both slots stay in their own fixed CSS Grid column at all times (so the
+   grid's height is always derived from normal layout, never from a
+   transform), and the swap is purely a paint-time `transform`: the image
+   slot is always column 1 / z-0, the form slot always column 2 / z-10.
+   Because the form slot has a strictly higher stacking order than the
+   image slot at all times, the image can never render above the inputs,
+   in either direction of the swap. The translateX distance is self
+   (100%) plus the actual column gap, read from the same custom property
+   the grid gap itself uses, so the two slots land exactly on top of each
+   other's resting position with no drift. */
+.auth-slots {
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 1024px) {
+  .auth-slots {
+    --auth-gap: 3.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: var(--auth-gap);
+  }
+}
+@media (min-width: 1280px) {
+  .auth-slots {
+    --auth-gap: 4.5rem;
+  }
+}
+
+.auth-slot {
+  scale: 1;
+  transition:
+    transform 800ms cubic-bezier(0.76, 0, 0.24, 1),
+    scale 480ms ease-out;
+}
+.auth-slot-image {
+  position: relative;
+  z-index: 0;
+}
+.auth-slot-form {
+  position: relative;
+  z-index: 10;
+  /* Fully opaque so it can never visually blend with the image slot behind
+     it, even while both are mid-transform and technically overlapping. */
+  background-color: #fff;
+}
+.auth-slot-image[data-transitioning] {
+  scale: 0.97;
+}
+.auth-slot-form[data-transitioning] {
+  scale: 0.99;
+}
+@media (min-width: 1024px) {
+  .auth-slot-image[data-mode="register"] {
+    transform: translateX(calc(100% + var(--auth-gap)));
+  }
+  .auth-slot-form[data-mode="register"] {
+    transform: translateX(calc(-100% - var(--auth-gap)));
+  }
+}
+
+/* Content settle after the swap: a small, fast correction on desktop
+   (the panel has already essentially arrived), a slightly larger and
+   slower fade+lift on mobile (which has no lateral movement at all). */
+.auth-content-settle {
+  animation: auth-content-settle-mobile 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes auth-content-settle-mobile {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (min-width: 1024px) {
+  .auth-content-settle {
+    animation: auth-content-settle-desktop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes auth-content-settle-desktop {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .stagger > * {
+    opacity: 1 !important;
+  }
+}

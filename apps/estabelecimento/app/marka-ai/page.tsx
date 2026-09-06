@@ -16,7 +16,7 @@ export default function MarkaAiPage() {
         description="Insights contextuais — não chatbot"
       />
 
-      <div className="space-y-3">
+      <div className="stagger space-y-3">
         <InsightCard
           title="Agenda: horários livres amanhã"
           explanation="5 slots abertos — preencha com retorno VIP."

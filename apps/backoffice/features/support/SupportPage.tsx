@@ -174,7 +174,7 @@ export function SupportPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">
@@ -185,13 +185,13 @@ export function SupportPage() {
       </section>
 
       {showCreate ? (
-        <div className="space-y-3 rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="space-y-3 card p-4">
           <h2 className="text-sm font-medium text-marka-graphite">Novo ticket</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs text-marka-gray">Assunto</span>
               <input
-                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                className="mt-1 field"
                 value={form.subject}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, subject: e.target.value }))
@@ -201,7 +201,7 @@ export function SupportPage() {
             <label className="block">
               <span className="text-xs text-marka-gray">Cliente</span>
               <input
-                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                className="mt-1 field"
                 value={form.customerName}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, customerName: e.target.value }))
@@ -211,7 +211,7 @@ export function SupportPage() {
             <label className="block">
               <span className="text-xs text-marka-gray">Tipo</span>
               <select
-                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                className="mt-1 field"
                 value={form.type}
                 onChange={(e) =>
                   setForm((f) => ({
@@ -228,7 +228,7 @@ export function SupportPage() {
             <label className="block">
               <span className="text-xs text-marka-gray">Prioridade</span>
               <select
-                className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                className="mt-1 field"
                 value={form.priority}
                 onChange={(e) =>
                   setForm((f) => ({
@@ -246,7 +246,7 @@ export function SupportPage() {
           <label className="block">
             <span className="text-xs text-marka-gray">Descrição</span>
             <textarea
-              className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+              className="mt-1 field"
               rows={3}
               value={form.description}
               onChange={(e) =>
@@ -265,19 +265,19 @@ export function SupportPage() {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <div className="mb-4 flex flex-wrap gap-3">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar…"
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Buscar tickets"
             />
             <select
               value={type}
               onChange={(e) => setType(e.target.value as typeof type)}
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Filtro tipo"
             >
               {TYPE_FILTERS.map((s) => (
@@ -289,7 +289,7 @@ export function SupportPage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as typeof status)}
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Filtro status"
             >
               {STATUS_FILTERS.map((s) => (
@@ -301,7 +301,7 @@ export function SupportPage() {
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as typeof priority)}
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Filtro prioridade"
             >
               {PRIORITY_FILTERS.map((s) => (
@@ -321,24 +321,24 @@ export function SupportPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Ticket</th>
-                    <th className="px-2 py-2 font-medium">Cliente</th>
-                    <th className="px-2 py-2 font-medium">Tipo</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 font-medium">Prioridade</th>
-                    <th className="px-2 py-2 font-medium">Data</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Ticket</th>
+                    <th className="table-head-cell">Cliente</th>
+                    <th className="table-head-cell">Tipo</th>
+                    <th className="table-head-cell">Status</th>
+                    <th className="table-head-cell">Prioridade</th>
+                    <th className="table-head-cell">Data</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tickets.map((t) => (
                     <tr
                       key={t.id}
-                      className={`border-b border-marka-graphite/5 hover:bg-marka-off/60 ${
+                      className={`table-row ${
                         selected === t.id ? "bg-marka-off/60" : ""
                       }`}
                     >
-                      <td className="px-2 py-2">
+                      <td className="table-cell">
                         <button
                           type="button"
                           className="font-medium text-marka-black underline"
@@ -347,13 +347,13 @@ export function SupportPage() {
                           {t.subject}
                         </button>
                       </td>
-                      <td className="px-2 py-2">{t.customer}</td>
-                      <td className="px-2 py-2 capitalize">{t.type}</td>
-                      <td className="px-2 py-2 capitalize">
+                      <td className="table-cell">{t.customer}</td>
+                      <td className="table-cell capitalize">{t.type}</td>
+                      <td className="table-cell capitalize">
                         {t.status.replace("_", " ")}
                       </td>
-                      <td className="px-2 py-2 capitalize">{t.priority}</td>
-                      <td className="px-2 py-2 text-marka-gray">
+                      <td className="table-cell capitalize">{t.priority}</td>
+                      <td className="table-cell text-marka-gray">
                         {formatDateTime(t.createdAt)}
                       </td>
                     </tr>
@@ -364,7 +364,7 @@ export function SupportPage() {
           )}
         </div>
 
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           {!selectedTicket ? (
             <EmptyState
               title="Selecione um ticket"

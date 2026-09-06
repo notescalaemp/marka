@@ -20,7 +20,7 @@ export default function RelatoriosPage() {
         description="Informações úteis para gestão"
       />
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="stagger grid gap-3 md:grid-cols-2">
         <Card className="p-4">
           <h2 className="font-semibold">Faturamento</h2>
           <p className="mt-1 text-lg font-medium">{formatPrice(revenue)}</p>

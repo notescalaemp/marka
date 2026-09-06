@@ -17,7 +17,7 @@ export default function ProfissionaisPage() {
         description="Equipe, especialidades e desempenho"
       />
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="stagger grid gap-3 md:grid-cols-2">
         {professionals.map((p) => {
           const servicesCount = services.filter((s) =>
             p.services.includes(s.name)
@@ -32,7 +32,7 @@ export default function ProfissionaisPage() {
                 }, 0) / appts.length;
           return (
             <Link key={p.id} href={`/profissionais/${p.id}`}>
-              <Card className="p-4">
+              <Card interactive className="p-4">
                 <div className="flex items-center gap-3">
                   <img
                     src={p.photo}

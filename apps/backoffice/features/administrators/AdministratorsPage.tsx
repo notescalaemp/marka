@@ -171,7 +171,7 @@ export function AdministratorsPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -179,12 +179,12 @@ export function AdministratorsPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as "all" | AdminRole)}
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro role"
           >
             <option value="all">Todas as roles</option>
@@ -197,7 +197,7 @@ export function AdministratorsPage() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as typeof status)}
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro status"
           >
             <option value="all">Todos os status</option>
@@ -209,41 +209,41 @@ export function AdministratorsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead>
-              <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                <th className="px-2 py-2 font-medium">Administrador</th>
-                <th className="px-2 py-2 font-medium">Role</th>
-                <th className="px-2 py-2 font-medium">Status</th>
-                <th className="px-2 py-2 font-medium">Último login</th>
-                <th className="px-2 py-2 font-medium">Ações</th>
+              <tr className="table-head-row">
+                <th className="table-head-cell">Administrador</th>
+                <th className="table-head-cell">Role</th>
+                <th className="table-head-cell">Status</th>
+                <th className="table-head-cell">Último login</th>
+                <th className="table-head-cell">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((a) => (
                 <tr
                   key={a.id}
-                  className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                  className="table-row"
                 >
-                  <td className="px-2 py-2 font-medium">{a.name}</td>
-                  <td className="px-2 py-2">{a.role}</td>
-                  <td className="px-2 py-2">
+                  <td className="table-cell font-medium text-marka-black">{a.name}</td>
+                  <td className="table-cell">{a.role}</td>
+                  <td className="table-cell">
                     <span
                       className={
                         a.status === "ativo"
-                          ? "text-emerald-700"
+                          ? "text-marka-green-dark"
                           : "text-marka-gray"
                       }
                     >
                       {a.status}
                     </span>
                   </td>
-                  <td className="px-2 py-2 text-marka-gray">
+                  <td className="table-cell text-marka-gray">
                     {a.lastLogin ? formatDateTime(a.lastLogin) : "—"}
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="table-cell">
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="text-xs text-emerald-700 underline"
+                        className="text-xs text-marka-green-dark underline"
                         disabled={saving}
                         onClick={() => {
                           if (a.status === "ativo") {
@@ -265,7 +265,7 @@ export function AdministratorsPage() {
       </div>
 
       {showCreate ? (
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-medium text-marka-graphite">
             Novo administrador
           </h2>
@@ -274,7 +274,7 @@ export function AdministratorsPage() {
               placeholder="Nome"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
-              className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Nome do administrador"
             />
             <input
@@ -282,7 +282,7 @@ export function AdministratorsPage() {
               type="email"
               value={createEmail}
               onChange={(e) => setCreateEmail(e.target.value)}
-              className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="E-mail do administrador"
             />
             <input
@@ -290,11 +290,11 @@ export function AdministratorsPage() {
               type="password"
               value={createPassword}
               onChange={(e) => setCreatePassword(e.target.value)}
-              className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Senha"
             />
             <select
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Role"
               value={createRole}
               onChange={(e) => setCreateRole(e.target.value as AdminRole)}

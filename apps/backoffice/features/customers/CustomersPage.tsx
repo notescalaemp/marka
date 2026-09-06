@@ -111,7 +111,7 @@ export function CustomersPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -119,7 +119,7 @@ export function CustomersPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <input
             value={searchInput}
@@ -128,7 +128,7 @@ export function CustomersPage() {
               if (e.key === "Enter") applySearch();
             }}
             placeholder="Buscar cliente..."
-            className="rounded-md border border-marka-graphite/20 px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Buscar clientes"
           />
           <select
@@ -136,7 +136,7 @@ export function CustomersPage() {
             onChange={(e) =>
               onFilterChange(setStatus, e.target.value as (typeof STATUS_FILTERS)[number])
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro status"
           >
             {STATUS_FILTERS.map((s) => (
@@ -164,27 +164,27 @@ export function CustomersPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Cliente</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 font-medium">Agendamentos</th>
-                    <th className="px-2 py-2 font-medium">Ticket médio</th>
-                    <th className="px-2 py-2 font-medium">Repeat booking</th>
-                    <th className="px-2 py-2 font-medium">Total pago</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Cliente</th>
+                    <th className="table-head-cell">Status</th>
+                    <th className="table-head-cell">Agendamentos</th>
+                    <th className="table-head-cell">Ticket médio</th>
+                    <th className="table-head-cell">Repeat booking</th>
+                    <th className="table-head-cell">Total pago</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((c) => (
                     <tr
                       key={c.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2 font-medium">{c.name}</td>
-                      <td className="px-2 py-2 capitalize">{c.status}</td>
-                      <td className="px-2 py-2">{c.bookings}</td>
-                      <td className="px-2 py-2">{formatPrice(c.ticket)}</td>
-                      <td className="px-2 py-2">{c.repeat}%</td>
-                      <td className="px-2 py-2">{formatPrice(c.total)}</td>
+                      <td className="table-cell font-medium text-marka-black">{c.name}</td>
+                      <td className="table-cell capitalize">{c.status}</td>
+                      <td className="table-cell">{c.bookings}</td>
+                      <td className="table-cell">{formatPrice(c.ticket)}</td>
+                      <td className="table-cell">{c.repeat}%</td>
+                      <td className="table-cell">{formatPrice(c.total)}</td>
                     </tr>
                   ))}
                 </tbody>

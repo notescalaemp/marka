@@ -132,6 +132,15 @@ export function register(input: {
 export function logout() {
   return apiPost<void>("/api/auth/logout");
 }
+export function requestPasswordReset(email: string) {
+  return apiPost<{ message: string }>("/api/auth/password/forgot", { email });
+}
+export function confirmPasswordReset(token: string, password: string) {
+  return apiPost<{ message: string }>("/api/auth/password/reset", {
+    token,
+    password,
+  });
+}
 export function getInvite(token: string) {
   return apiGet<InvitePreviewDto>(`/api/auth/invite/${token}`);
 }

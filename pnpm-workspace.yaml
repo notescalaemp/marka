@@ -6,4 +6,5 @@ packages:
   - apps/consumer
   - apps/backoffice
   - apps/estabelecimento
+  - apps/landing
   - apps/api

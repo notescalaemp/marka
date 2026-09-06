@@ -17,7 +17,7 @@ export default function ClientProfilePage() {
 
   if (!client) {
     return (
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-6">
+      <div className="card p-6">
         <h1 className="text-lg font-semibold">Cliente não encontrado</h1>
         <Link href="/clientes" className="mt-2 inline-block text-sm">
           Voltar
@@ -48,7 +48,7 @@ export default function ClientProfilePage() {
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="stagger grid gap-3 md:grid-cols-3">
         <Card className="p-4">
           <p className="text-xs text-marka-gray">Último atendimento</p>
           <p className="mt-1 text-lg font-semibold">
@@ -78,7 +78,7 @@ export default function ClientProfilePage() {
         </Card>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="stagger grid gap-3 lg:grid-cols-2">
         <Card className="p-4 space-y-3">
           <h2 className="font-semibold">Dados</h2>
           <p className="text-sm">Telefone: {client.phone}</p>
@@ -97,7 +97,7 @@ export default function ClientProfilePage() {
 
         <Card className="p-4 space-y-3">
           <h2 className="font-semibold">Beauty Memory</h2>
-          <div className="rounded-md bg-marka-off p-3">
+          <div className="rounded-xl bg-marka-green-soft p-3">
             <p className="text-sm font-medium">Preferência da cliente</p>
             <p className="text-sm">Formato: {client.preferences?.format ?? "—"}</p>
             <p className="text-sm">
@@ -115,11 +115,11 @@ export default function ClientProfilePage() {
         <h2 className="mb-2 text-sm font-medium text-marka-graphite">
           Histórico
         </h2>
-        <div className="space-y-2">
+        <div className="stagger space-y-2">
           {history.map((a) => (
             <div
               key={a.id}
-              className="rounded-md border border-marka-graphite/10 bg-marka-white px-3 py-2 text-sm"
+              className="rounded-xl border border-black/[0.06] bg-white px-3 py-2.5 text-sm transition-colors hover:bg-marka-off/60"
             >
               {a.date} · {a.time} ·{" "}
               {services.find((s) => s.id === a.serviceId)?.name}

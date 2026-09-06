@@ -74,8 +74,8 @@ export function FinancePage() {
             onClick={() => setPeriod(p.id)}
             className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
               period === p.id
-                ? "border-marka-black bg-marka-black text-marka-white"
-                : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
             }`}
           >
             {p.label}
@@ -91,7 +91,7 @@ export function FinancePage() {
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4"
+            className="card p-4"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-xl font-semibold text-marka-black">
@@ -101,7 +101,7 @@ export function FinancePage() {
               <p
                 className={
                   m.delta >= 0
-                    ? "mt-1 text-xs text-emerald-700"
+                    ? "mt-1 text-xs text-marka-green-dark"
                     : "mt-1 text-xs text-red-700"
                 }
               >
@@ -113,7 +113,7 @@ export function FinancePage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <h2 className="text-sm font-medium text-marka-graphite">Breakdown</h2>
         <ul className="mt-3 space-y-2 text-sm text-marka-graphite">
           <li>

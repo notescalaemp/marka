@@ -105,7 +105,7 @@ export function PaymentsPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -113,14 +113,14 @@ export function PaymentsPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <select
             value={status}
             onChange={(e) =>
               onFilterChange(setStatus, e.target.value as (typeof STATUS_FILTERS)[number])
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro status"
           >
             {STATUS_FILTERS.map((s) => (
@@ -134,7 +134,7 @@ export function PaymentsPage() {
             onChange={(e) =>
               onFilterChange(setMethod, e.target.value as (typeof METHODS)[number])
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro método"
           >
             {METHODS.map((m) => (
@@ -162,29 +162,29 @@ export function PaymentsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Pagamento</th>
-                    <th className="px-2 py-2 font-medium">Cliente</th>
-                    <th className="px-2 py-2 font-medium">Estabelecimento</th>
-                    <th className="px-2 py-2 font-medium">Valor</th>
-                    <th className="px-2 py-2 font-medium">Método</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 font-medium">Data</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Pagamento</th>
+                    <th className="table-head-cell">Cliente</th>
+                    <th className="table-head-cell">Estabelecimento</th>
+                    <th className="table-head-cell">Valor</th>
+                    <th className="table-head-cell">Método</th>
+                    <th className="table-head-cell">Status</th>
+                    <th className="table-head-cell">Data</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((p) => (
                     <tr
                       key={p.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2 font-medium">{p.id}</td>
-                      <td className="px-2 py-2">{p.customer}</td>
-                      <td className="px-2 py-2 text-marka-graphite">{p.establishment}</td>
-                      <td className="px-2 py-2">{formatPrice(p.value)}</td>
-                      <td className="px-2 py-2">{p.method}</td>
-                      <td className="px-2 py-2 capitalize">{p.status}</td>
-                      <td className="px-2 py-2 text-marka-gray">{p.date}</td>
+                      <td className="table-cell font-medium text-marka-black">{p.id}</td>
+                      <td className="table-cell">{p.customer}</td>
+                      <td className="table-cell text-marka-graphite">{p.establishment}</td>
+                      <td className="table-cell">{formatPrice(p.value)}</td>
+                      <td className="table-cell">{p.method}</td>
+                      <td className="table-cell capitalize">{p.status}</td>
+                      <td className="table-cell text-marka-gray">{p.date}</td>
                     </tr>
                   ))}
                 </tbody>

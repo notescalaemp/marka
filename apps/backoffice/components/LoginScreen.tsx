@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -25,14 +26,17 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-marka-off px-4">
+    <div className="flex min-h-screen items-center justify-center bg-marka-off bg-marka-mesh bg-no-repeat px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-marka-graphite/10 bg-marka-white p-6"
+        className="card w-full max-w-sm animate-fade-in-up space-y-5 p-7"
       >
-        <div className="space-y-1 text-center">
-          <MarkaMark className="mx-auto text-marka-black" />
-          <p className="text-sm text-marka-gray">Backoffice · Administração interna</p>
+        <div className="space-y-2 text-center">
+          <MarkaMark className="mx-auto justify-center text-marka-black" />
+          <div className="mx-auto flex w-fit items-center gap-1.5 rounded-full bg-marka-green-soft px-2.5 py-1 text-[11px] font-medium text-marka-green-dark">
+            <ShieldCheck className="h-3 w-3" />
+            Backoffice · Administração interna
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -63,9 +67,11 @@ export function LoginScreen() {
           />
         </div>
 
-        {authError ? <p className="text-sm text-red-600">{authError}</p> : null}
+        {authError ? (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{authError}</p>
+        ) : null}
 
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" className="w-full" size="lg" disabled={submitting}>
           {submitting ? "Entrando..." : "Entrar"}
         </Button>
       </form>

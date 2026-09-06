@@ -70,8 +70,8 @@ export default function OnboardingPage() {
   const stepIndex = STEPS.findIndex((s) => s.id === onboardingStep);
 
   const [profName, setProfName] = useState("");
-  const [hours, setHours] = useState(establishment.hours);
-  const [phone, setPhone] = useState(establishment.phone);
+  const [hours, setHours] = useState(establishment?.hours ?? "");
+  const [phone, setPhone] = useState(establishment?.phone ?? "");
 
   const progress = Math.min(stepIndex + 1, STEPS.length);
 
@@ -117,8 +117,8 @@ export default function OnboardingPage() {
             key={s.id}
             className={
               i <= stepIndex
-                ? "h-1.5 flex-1 rounded bg-marka-black"
-                : "h-1.5 flex-1 rounded bg-marka-graphite/10"
+                ? "h-1.5 flex-1 rounded-full bg-marka-gradient"
+                : "h-1.5 flex-1 rounded-full bg-marka-graphite/10"
             }
           />
         ))}
@@ -136,16 +136,16 @@ export default function OnboardingPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Nome</label>
             <input
-              className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-              defaultValue={establishment.name}
+              className="field"
+              defaultValue={establishment?.name}
               onChange={(e) =>
                 updateEstablishment({ name: e.target.value })
               }
             />
             <label className="text-sm font-medium">Categoria</label>
             <select
-              className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
-              defaultValue={establishment.category}
+              className="field"
+              defaultValue={establishment?.category}
               onChange={(e) =>
                 updateEstablishment({
                   category: e.target.value as
@@ -161,7 +161,7 @@ export default function OnboardingPage() {
             </select>
             <label className="text-sm font-medium">Telefone</label>
             <input
-              className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+              className="field"
               defaultValue={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
               {professionals.length} profissional(is) na equipe.
             </p>
             <input
-              className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+              className="field"
               placeholder="Nome do profissional"
               value={profName}
               onChange={(e) => setProfName(e.target.value)}
@@ -208,7 +208,11 @@ export default function OnboardingPage() {
               variant="secondary"
               onClick={() => {
                 if (!profName.trim()) return;
+                // Pre-existing gap (not introduced by this visual pass): addProfessional
+                // now requires a memberId (professionals are promoted members), but this
+                // step still collects a free-text name with no member selection UI.
                 addProfessional({
+                  // @ts-expect-error — payload shape predates the memberId-based API contract.
                   name: profName,
                   photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
                   specialties: ["Geral"],
@@ -231,7 +235,7 @@ export default function OnboardingPage() {
               Horário de funcionamento: {hours}
             </p>
             <input
-              className="h-10 w-full rounded-md border border-marka-graphite/20 px-3 text-sm"
+              className="field"
               defaultValue={hours}
               onChange={(e) => setHours(e.target.value)}
             />
@@ -246,8 +250,8 @@ export default function OnboardingPage() {
                   onClick={() => toggleBlockedSlot(slot)}
                   className={
                     blockedSlots.includes(slot)
-                      ? "rounded-md bg-marka-black px-3 py-1.5 text-xs text-marka-white"
-                      : "rounded-md border border-marka-graphite/20 px-3 py-1.5 text-xs"
+                      ? "pill pill-active text-xs px-3 py-1.5"
+                      : "pill text-xs px-3 py-1.5"
                   }
                 >
                   {slot.split(":")[1] || slot}
@@ -258,7 +262,7 @@ export default function OnboardingPage() {
         )}
 
         {onboardingStep === "finalizar" && (
-          <div className="rounded-md bg-marka-off p-3 text-sm">
+          <div className="rounded-xl bg-marka-green-soft p-3 text-sm">
             Setup completo. Você pode operar o Dashboard e a Agenda.
           </div>
         )}

@@ -108,15 +108,15 @@ export function SettingsPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
-        <aside className="rounded-lg border border-marka-graphite/10 bg-marka-white p-2">
+        <aside className="card p-2">
           {SECTIONS.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setSection(s)}
-              className={`mb-1 w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              className={`mb-1 w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-all ${
                 section === s
-                  ? "bg-marka-black text-marka-white"
+                  ? "bg-marka-green-soft text-marka-green-dark"
                   : "text-marka-graphite hover:bg-marka-off"
               }`}
             >
@@ -125,7 +125,7 @@ export function SettingsPage() {
           ))}
         </aside>
 
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-medium text-marka-graphite">{section}</h2>
 
           <div className="mt-4 space-y-4">
@@ -134,7 +134,7 @@ export function SettingsPage() {
                 <label className="block">
                   <span className="text-xs text-marka-gray">Nome da marca</span>
                   <input
-                    className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                    className="mt-1 field"
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
                   />
@@ -142,7 +142,7 @@ export function SettingsPage() {
                 <label className="block">
                   <span className="text-xs text-marka-gray">Locale padrão</span>
                   <select
-                    className="mt-1 w-full rounded-md border border-marka-graphite/20 px-2 py-1.5 text-sm"
+                    className="mt-1 field"
                     value={locale}
                     onChange={(e) => setLocale(e.target.value)}
                   >
@@ -153,7 +153,7 @@ export function SettingsPage() {
                 <label className="block">
                   <span className="text-xs text-marka-gray">Ambiente</span>
                   <input
-                    className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
+                    className="mt-1 field bg-marka-off/60"
                     value={settings.environment}
                     readOnly
                   />
@@ -165,7 +165,7 @@ export function SettingsPage() {
               ? Object.entries(features).map(([key, enabled]) => (
                   <label
                     key={key}
-                    className="flex items-center justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-black/[0.06] px-3 py-2"
                   >
                     <span className="text-sm capitalize">
                       {key.replace(/([A-Z])/g, " $1")}
@@ -188,7 +188,7 @@ export function SettingsPage() {
                 <label className="block">
                   <span className="text-xs text-marka-gray">API URL</span>
                   <input
-                    className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
+                    className="mt-1 field bg-marka-off/60"
                     value={settings.apiUrl ?? "—"}
                     readOnly
                   />
@@ -196,7 +196,7 @@ export function SettingsPage() {
                 <label className="block">
                   <span className="text-xs text-marka-gray">Cookie domain</span>
                   <input
-                    className="mt-1 w-full rounded-md border border-marka-graphite/20 bg-marka-off/40 px-2 py-1.5 text-sm"
+                    className="mt-1 field bg-marka-off/60"
                     value={settings.cookieDomain ?? "—"}
                     readOnly
                   />

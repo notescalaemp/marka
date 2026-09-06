@@ -73,14 +73,14 @@ export function EstablishmentDetailPage() {
 
   if (notFound) {
     return (
-      <div className="rounded-lg border border-dashed border-marka-graphite/20 bg-marka-white p-8 text-center">
-        <h2 className="text-lg font-semibold">Estabelecimento não encontrado</h2>
+      <div className="flex flex-col items-center rounded-2xl border border-dashed border-black/10 bg-marka-off/60 p-10 text-center">
+        <h2 className="text-lg font-semibold text-marka-black">Estabelecimento não encontrado</h2>
         <p className="mt-1 text-sm text-marka-gray">
           Verifique o ID ou retorne à lista.
         </p>
         <Link
           href="/establishments"
-          className="mt-4 inline-block text-sm text-emerald-700 underline"
+          className="mt-4 inline-block text-sm font-medium text-marka-green-dark underline"
         >
           Voltar à lista
         </Link>
@@ -131,7 +131,7 @@ export function EstablishmentDetailPage() {
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-md border border-marka-graphite/10 bg-marka-off/40 px-3 py-2"
+              className="rounded-xl border border-black/[0.06] bg-marka-off/40 px-3 py-2"
             >
               <p className="text-xs text-marka-gray">{label}</p>
               <p className="mt-0.5 text-sm font-medium">{value}</p>
@@ -162,7 +162,7 @@ export function EstablishmentDetailPage() {
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-md border border-marka-graphite/10 px-3 py-2"
+              className="rounded-xl border border-black/[0.06] px-3 py-2"
             >
               <p className="text-xs text-marka-gray">{label}</p>
               <p className="mt-0.5 text-sm font-medium">{value}</p>
@@ -184,7 +184,7 @@ export function EstablishmentDetailPage() {
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-md border border-marka-graphite/10 px-3 py-2"
+              className="rounded-xl border border-black/[0.06] px-3 py-2"
             >
               <p className="text-xs text-marka-gray">{label}</p>
               <p className="mt-0.5 text-sm font-medium">{value}</p>
@@ -205,7 +205,7 @@ export function EstablishmentDetailPage() {
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-md border border-marka-graphite/10 px-3 py-2"
+              className="rounded-xl border border-black/[0.06] px-3 py-2"
             >
               <p className="text-xs text-marka-gray">{label}</p>
               <p className="mt-0.5 text-sm font-medium">{value}</p>
@@ -219,13 +219,13 @@ export function EstablishmentDetailPage() {
       body: (
         <div className="space-y-2">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-md border border-marka-graphite/10 px-3 py-2">
+            <div className="rounded-xl border border-black/[0.06] px-3 py-2">
               <p className="text-xs text-marka-gray">Churn risk</p>
               <p className="mt-0.5 text-sm font-medium capitalize">
                 {data.churnRisk}
               </p>
             </div>
-            <div className="rounded-md border border-marka-graphite/10 px-3 py-2">
+            <div className="rounded-xl border border-black/[0.06] px-3 py-2">
               <p className="text-xs text-marka-gray">MRR at risk</p>
               <p className="mt-0.5 text-sm font-medium">—</p>
             </div>
@@ -246,7 +246,7 @@ export function EstablishmentDetailPage() {
             {data.recentActivity.map((a) => (
               <li
                 key={a.id}
-                className="flex items-start justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
+                className="flex items-start justify-between gap-3 rounded-xl border border-black/[0.06] px-3 py-2"
               >
                 <p className="text-sm font-medium text-marka-black">
                   {a.action}
@@ -299,12 +299,14 @@ export function EstablishmentDetailPage() {
         </span>
       </div>
 
-      {sections.map((s) => (
-        <section key={s.title} className="space-y-2">
-          <h2 className="text-sm font-medium text-marka-graphite">{s.title}</h2>
-          {s.body}
-        </section>
-      ))}
+      <div className="stagger space-y-4">
+        {sections.map((s) => (
+          <section key={s.title} className="card space-y-3 p-4">
+            <h2 className="text-sm font-semibold text-marka-graphite">{s.title}</h2>
+            {s.body}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

@@ -107,7 +107,7 @@ export function AcquisitionPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -115,7 +115,7 @@ export function AcquisitionPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <h2 className="text-sm font-medium text-marka-graphite">Funil interativo</h2>
         {funnel.length === 0 ? (
           <p className="mt-3 text-sm text-marka-gray">Sem dados de funil.</p>
@@ -129,8 +129,8 @@ export function AcquisitionPage() {
                   onClick={() => setStep(i)}
                   className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
                     step === i
-                      ? "border-marka-black bg-marka-black text-marka-white"
-                      : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                      ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                      : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
                   }`}
                 >
                   {s.label}
@@ -138,7 +138,7 @@ export function AcquisitionPage() {
               ))}
             </div>
             {selectedStep ? (
-              <div className="mt-4 rounded-md border border-marka-graphite/10 bg-marka-off/40 px-3 py-3">
+              <div className="mt-4 rounded-xl border border-black/[0.06] bg-marka-off/40 px-3 py-3">
                 <p className="text-xs text-marka-gray">{selectedStep.label}</p>
                 <p className="mt-1 text-lg font-semibold text-marka-black">
                   {formatNumber(selectedStep.value)}
@@ -155,14 +155,14 @@ export function AcquisitionPage() {
         )}
       </div>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-medium text-marka-graphite">Canais</h2>
           {channels.length > 0 ? (
             <select
               value={channel}
               onChange={(e) => setChannel(e.target.value)}
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+              className="field-sm"
               aria-label="Filtro canal"
             >
               <option value="all">Todos os canais</option>
@@ -185,7 +185,7 @@ export function AcquisitionPage() {
             {filteredChannels.map((c) => (
               <li
                 key={c.label}
-                className="flex items-center justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 rounded-xl border border-black/[0.06] px-3 py-2 text-sm"
               >
                 <span>{c.label}</span>
                 <span className="text-marka-graphite">{c.value}%</span>

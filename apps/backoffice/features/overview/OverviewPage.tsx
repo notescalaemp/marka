@@ -38,6 +38,8 @@ const CHART_METRICS = [
   { id: "users", label: "Usuários", key: "users" as const },
 ];
 
+const CHART_COLORS = ["#309577", "#36A080", "#6AC0A2", "#242424"];
+
 function sliceSeriesByPeriod(
   series: AdminOverviewSeriesPointDto[],
   period: string
@@ -134,7 +136,7 @@ export function OverviewPage() {
         description="Central de operação da marka.ia — dados, análise e decisões."
       />
 
-      <section className="grid gap-3 md:grid-cols-4">
+      <section className="stagger grid gap-3 md:grid-cols-4">
         {kpis.map((kpi) => (
           <KPICard key={kpi.label} {...kpi} />
         ))}
@@ -159,7 +161,7 @@ export function OverviewPage() {
       </div>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4 lg:col-span-2">
+        <div className="card p-4 lg:col-span-2">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {CHART_METRICS.map((m) => {
@@ -179,8 +181,8 @@ export function OverviewPage() {
                     }}
                     className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
                       active
-                        ? "border-marka-black bg-marka-black text-marka-white"
-                        : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                        ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                        : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
                     }`}
                   >
                     {m.label}
@@ -191,7 +193,7 @@ export function OverviewPage() {
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1 text-xs"
+              className="field-sm"
               aria-label="Período"
             >
               <option value="7d">Últimos 7 dias</option>
@@ -207,10 +209,32 @@ export function OverviewPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={series}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e8e8e6" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <defs>
+                    {CHART_COLORS.map((color, i) => (
+                      <linearGradient key={color} id={`overviewFill${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+                        <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#EBEBE7" vertical={false} />
+                  <XAxis
+                    dataKey="period"
+                    tick={{ fontSize: 12, fill: "#8A8A8A" }}
+                    axisLine={{ stroke: "#EBEBE7" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: "#8A8A8A" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <Tooltip
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid rgba(11,11,11,0.06)",
+                      boxShadow: "0 12px 28px -16px rgba(11,11,11,0.25)",
+                    }}
                     formatter={(value: number, name: string) => {
                       const numeric = Number(value);
                       if (name === "mrr" || name === "arr") {
@@ -221,16 +245,16 @@ export function OverviewPage() {
                     labelFormatter={(l) => `Período: ${l}`}
                   />
                   {selectedMetrics.map((key, i) => {
-                    const colors = ["#0B0B0B", "#0d7a4f", "#8A8A8A", "#242424"];
+                    const color = CHART_COLORS[i % CHART_COLORS.length];
                     return (
                       <Area
                         key={key}
                         type="monotone"
                         dataKey={key}
-                        stroke={colors[i % colors.length]}
-                        fill={colors[i % colors.length]}
-                        fillOpacity={0.12}
-                        strokeWidth={2}
+                        stroke={color}
+                        fill={`url(#overviewFill${i % CHART_COLORS.length})`}
+                        strokeWidth={2.5}
+                        animationDuration={600}
                       />
                     );
                   })}
@@ -240,7 +264,7 @@ export function OverviewPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-medium text-marka-graphite">
             Métricas complementares
           </h2>
@@ -251,11 +275,11 @@ export function OverviewPage() {
               secondary.map((m) => (
                 <li
                   key={m.label}
-                  className="flex items-center justify-between gap-2 border-b border-marka-graphite/5 pb-2 last:border-0"
+                  className="flex items-center justify-between gap-2 border-b border-black/[0.05] pb-2 last:border-0"
                 >
                   <div>
                     <p className="text-xs text-marka-gray">{m.label}</p>
-                    <p className="text-sm font-medium text-marka-black">{m.value}</p>
+                    <p className="text-sm font-medium tabular-nums text-marka-black">{m.value}</p>
                   </div>
                 </li>
               ))
@@ -265,12 +289,12 @@ export function OverviewPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-medium text-marka-graphite">
               Recent Activity
             </h2>
-            <Link href="/alerts" className="text-xs text-emerald-700 underline">
+            <Link href="/alerts" className="text-xs text-marka-green-dark underline">
               Ver alertas
             </Link>
           </div>
@@ -281,7 +305,7 @@ export function OverviewPage() {
               {activity.map((a) => (
                 <li
                   key={a.id}
-                  className="flex items-start justify-between gap-3 rounded-md border border-marka-graphite/10 px-3 py-2"
+                  className="flex items-start justify-between gap-3 rounded-xl border border-black/[0.05] px-3 py-2.5 transition-colors hover:bg-marka-off/70"
                 >
                   <div>
                     <p className="text-sm font-medium text-marka-black">
@@ -291,7 +315,7 @@ export function OverviewPage() {
                       {a.entity} · {a.at}
                     </p>
                   </div>
-                  <span className="text-[11px] uppercase text-marka-gray">
+                  <span className="whitespace-nowrap rounded-full bg-marka-off px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-marka-gray">
                     {a.status}
                   </span>
                 </li>
@@ -300,10 +324,10 @@ export function OverviewPage() {
           )}
         </div>
 
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-medium text-marka-graphite">Plans</h2>
-            <Link href="/plans" className="text-xs text-emerald-700 underline">
+            <Link href="/plans" className="text-xs text-marka-green-dark underline">
               Comparar
             </Link>
           </div>
@@ -314,19 +338,19 @@ export function OverviewPage() {
               {plans.map((p) => (
                 <li
                   key={p.id}
-                  className="flex items-center justify-between gap-2 rounded-md border border-marka-graphite/10 px-3 py-2"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-black/[0.05] px-3 py-2.5 transition-colors hover:bg-marka-off/70"
                 >
                   <div>
-                    <p className="text-sm font-medium">{p.name}</p>
+                    <p className="text-sm font-medium text-marka-black">{p.name}</p>
                     <p className="text-xs text-marka-gray">
                       {p.subscribers} assinantes
                     </p>
                   </div>
                   <div className="text-right text-xs text-marka-graphite">
-                    <p>{formatPrice(p.mrr)}</p>
+                    <p className="font-medium tabular-nums">{formatPrice(p.mrr)}</p>
                     <p
                       className={
-                        p.growth >= 0 ? "text-emerald-700" : "text-red-700"
+                        p.growth >= 0 ? "text-marka-green-dark" : "text-red-700"
                       }
                     >
                       {p.growth.toFixed(1)}% growth

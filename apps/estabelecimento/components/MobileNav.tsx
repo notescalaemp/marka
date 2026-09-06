@@ -40,7 +40,7 @@ export function MobileNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-marka-graphite/10 bg-marka-white px-2 py-2 lg:hidden">
+    <nav className="glass-panel fixed bottom-0 left-0 right-0 z-40 border-t border-black/[0.06] px-2 py-2 lg:hidden">
       <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
         {items.map((item) => {
           const Icon = item.icon;
@@ -52,13 +52,18 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-md px-1 py-1 text-[11px]",
-                active
-                  ? "bg-marka-black text-marka-white"
-                  : "text-marka-graphite"
+                "flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors",
+                active ? "text-marka-green-dark" : "text-marka-graphite/70"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <span
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-full transition-colors",
+                  active ? "bg-marka-green-soft" : ""
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
               {item.label}
             </Link>
           );

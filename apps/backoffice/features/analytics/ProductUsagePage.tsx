@@ -87,7 +87,7 @@ export function ProductUsagePage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -95,7 +95,7 @@ export function ProductUsagePage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-3 flex flex-wrap gap-2">
           {(["all", "Pro", "Starter", "Enterprise"] as const).map((p) => (
             <button
@@ -104,8 +104,8 @@ export function ProductUsagePage() {
               onClick={() => setPlan(p)}
               className={`rounded-md border px-2.5 py-1 text-xs capitalize transition-colors ${
                 plan === p
-                  ? "border-marka-black bg-marka-black text-marka-white"
-                  : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                  ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                  : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
               }`}
             >
               {p}
@@ -130,7 +130,7 @@ export function ProductUsagePage() {
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-marka-off">
                 <div
-                  className="h-full rounded-full bg-emerald-500"
+                  className="h-full rounded-full bg-marka-green"
                   style={{ width: `${Math.min(f.adoption, 100)}%` }}
                 />
               </div>
@@ -139,11 +139,11 @@ export function ProductUsagePage() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-md border border-marka-graphite/10 p-3">
+          <div className="rounded-xl border border-black/[0.06] p-3">
             <p className="text-xs text-marka-gray">Mais usada</p>
             <p className="mt-1 text-sm font-medium">{mostUsed?.feature ?? "—"}</p>
           </div>
-          <div className="rounded-md border border-marka-graphite/10 p-3">
+          <div className="rounded-xl border border-black/[0.06] p-3">
             <p className="text-xs text-marka-gray">Menos usada</p>
             <p className="mt-1 text-sm font-medium">{leastUsed?.feature ?? "—"}</p>
           </div>

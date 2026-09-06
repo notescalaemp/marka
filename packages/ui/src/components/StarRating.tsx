@@ -26,8 +26,8 @@ export function StarRating({
           className={cn(
             sizeClass,
             i < full
-              ? "fill-marka-black text-marka-black"
-              : "text-marka-gray"
+              ? "fill-marka-green text-marka-green"
+              : "text-marka-gray/50"
           )}
         />
       ))}

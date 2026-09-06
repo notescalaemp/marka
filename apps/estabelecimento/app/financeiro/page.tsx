@@ -37,15 +37,15 @@ export default function FinanceiroPage() {
             onClick={() => setPeriod(p)}
             className={
               period === p
-                ? "rounded-md bg-marka-black px-3 py-1.5 text-sm text-marka-white"
-                : "rounded-md border border-marka-graphite/20 px-3 py-1.5 text-sm"
+                ? "pill pill-active"
+                : "pill"
             }
           >
             {p}
           </button>
         ))}
         <select
-          className="h-9 rounded-md border border-marka-graphite/20 px-2 text-sm"
+          className="field-sm"
           value={professionalId}
           onChange={(e) => setProfessionalId(e.target.value)}
         >
@@ -58,7 +58,7 @@ export default function FinanceiroPage() {
         </select>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="stagger grid gap-3 md:grid-cols-3">
         <Card className="p-4">
           <p className="text-xs text-marka-gray">Receitas</p>
           <p className="mt-1 text-lg font-semibold">

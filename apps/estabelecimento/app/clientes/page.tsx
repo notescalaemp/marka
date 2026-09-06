@@ -44,7 +44,7 @@ export default function ClientesPage() {
         description="Lista, filtros e próxima oportunidade"
         actions={
           <input
-            className="h-9 w-56 rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field-sm w-56"
             placeholder="Buscar cliente"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -60,8 +60,8 @@ export default function ClientesPage() {
             onClick={() => setFilter(f.id)}
             className={
               filter === f.id
-                ? "rounded-md bg-marka-black px-3 py-1.5 text-sm text-marka-white"
-                : "rounded-md border border-marka-graphite/20 px-3 py-1.5 text-sm"
+                ? "pill pill-active"
+                : "pill"
             }
           >
             {f.label}
@@ -75,12 +75,12 @@ export default function ClientesPage() {
           description="Adicione clientes a partir do perfil ou CRM."
         />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="stagger grid gap-3 md:grid-cols-2">
           {list.map((c) => {
             const prof = professionals.find((p) => p.id === c.professionalId);
             return (
               <Link key={c.id} href={`/clientes/${c.id}`}>
-                <Card className="p-4 transition hover:border-marka-black/30">
+                <Card interactive className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-base font-semibold">{c.name}</p>

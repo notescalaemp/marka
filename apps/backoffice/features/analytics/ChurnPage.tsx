@@ -79,7 +79,7 @@ export function ChurnPage() {
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -88,7 +88,7 @@ export function ChurnPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-medium text-marka-graphite">Motivos</h2>
           <div className="mt-3 space-y-2">
             {breakdown.length === 0 ? (
@@ -112,7 +112,7 @@ export function ChurnPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+        <div className="card p-4">
           <h2 className="text-sm font-medium text-marka-graphite">
             MRR at risk
           </h2>
@@ -127,8 +127,8 @@ export function ChurnPage() {
                 onClick={() => setReason(r)}
                 className={`rounded-md border px-2.5 py-1 text-xs capitalize transition-colors ${
                   reason === r
-                    ? "border-marka-black bg-marka-black text-marka-white"
-                    : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                    ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                    : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
                 }`}
               >
                 {r}

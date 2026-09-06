@@ -108,7 +108,7 @@ export function SubscriptionsPage() {
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-marka-graphite/10 bg-marka-white p-3"
+            className="card p-3"
           >
             <p className="text-xs text-marka-gray">{m.label}</p>
             <p className="mt-1 text-lg font-semibold text-marka-black">{m.value}</p>
@@ -116,14 +116,14 @@ export function SubscriptionsPage() {
         ))}
       </section>
 
-      <div className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4">
+      <div className="card p-4">
         <div className="mb-4 flex flex-wrap gap-3">
           <select
             value={status}
             onChange={(e) =>
               onFilterChange(setStatus, e.target.value as (typeof STATUS_FILTERS)[number])
             }
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro status"
           >
             {STATUS_FILTERS.map((s) => (
@@ -135,7 +135,7 @@ export function SubscriptionsPage() {
           <select
             value={plan}
             onChange={(e) => onFilterChange(setPlan, e.target.value)}
-            className="rounded-md border border-marka-graphite/20 bg-marka-white px-2 py-1.5 text-xs"
+            className="field-sm"
             aria-label="Filtro plano"
           >
             <option value="all">Todos os planos</option>
@@ -162,29 +162,29 @@ export function SubscriptionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-marka-graphite/10 text-xs text-marka-gray">
-                    <th className="px-2 py-2 font-medium">Cliente</th>
-                    <th className="px-2 py-2 font-medium">Estabelecimento</th>
-                    <th className="px-2 py-2 font-medium">Plano</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 font-medium">MRR</th>
-                    <th className="px-2 py-2 font-medium">Entrada</th>
-                    <th className="px-2 py-2 font-medium">Próxima cobrança</th>
+                  <tr className="table-head-row">
+                    <th className="table-head-cell">Cliente</th>
+                    <th className="table-head-cell">Estabelecimento</th>
+                    <th className="table-head-cell">Plano</th>
+                    <th className="table-head-cell">Status</th>
+                    <th className="table-head-cell">MRR</th>
+                    <th className="table-head-cell">Entrada</th>
+                    <th className="table-head-cell">Próxima cobrança</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((s) => (
                     <tr
                       key={s.id}
-                      className="border-b border-marka-graphite/5 hover:bg-marka-off/60"
+                      className="table-row"
                     >
-                      <td className="px-2 py-2 font-medium">{s.customer}</td>
-                      <td className="px-2 py-2 text-marka-graphite">{s.establishment}</td>
-                      <td className="px-2 py-2">{s.plan}</td>
-                      <td className="px-2 py-2 capitalize">{s.status}</td>
-                      <td className="px-2 py-2">{formatPrice(s.mrr)}</td>
-                      <td className="px-2 py-2 text-marka-gray">{s.createdAt}</td>
-                      <td className="px-2 py-2 text-marka-gray">{s.nextBilling}</td>
+                      <td className="table-cell font-medium text-marka-black">{s.customer}</td>
+                      <td className="table-cell text-marka-graphite">{s.establishment}</td>
+                      <td className="table-cell">{s.plan}</td>
+                      <td className="table-cell capitalize">{s.status}</td>
+                      <td className="table-cell">{formatPrice(s.mrr)}</td>
+                      <td className="table-cell text-marka-gray">{s.createdAt}</td>
+                      <td className="table-cell text-marka-gray">{s.nextBilling}</td>
                     </tr>
                   ))}
                 </tbody>

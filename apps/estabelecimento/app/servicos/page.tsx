@@ -23,22 +23,22 @@ export default function ServicosPage() {
 
       <Card className="space-y-3 p-4">
         <h2 className="font-semibold">Novo serviço</h2>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="stagger grid gap-3 md:grid-cols-3">
           <input
-            className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field"
             placeholder="Nome"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <input
-            className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field"
             type="number"
             placeholder="Preço"
             value={price}
             onChange={(e) => setPrice(Number(e.target.value))}
           />
           <input
-            className="h-10 rounded-md border border-marka-graphite/20 px-3 text-sm"
+            className="field"
             type="number"
             placeholder="Duração (min)"
             value={duration}
@@ -67,7 +67,7 @@ export default function ServicosPage() {
       {services.length === 0 ? (
         <EmptyState title="Sem serviços" description="Adicione o primeiro." />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="stagger grid gap-3 md:grid-cols-2">
           {services.map((s) => (
             <Card key={s.id} className="p-4">
               <div className="flex items-start justify-between">

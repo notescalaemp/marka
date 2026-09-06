@@ -1,4 +1,5 @@
 import type { EstablishmentStatus } from "@/lib/types";
+import { cn } from "@/lib/cn";
 
 const STATUS_MAP: Record<EstablishmentStatus, "success" | "warning" | "default" | "danger"> = {
   active: "success",
@@ -9,10 +10,17 @@ const STATUS_MAP: Record<EstablishmentStatus, "success" | "warning" | "default" 
 };
 
 const tones: Record<string, string> = {
-  success: "bg-emerald-50 text-emerald-800",
+  success: "bg-marka-green-soft text-marka-green-dark",
   warning: "bg-amber-50 text-amber-800",
-  danger: "bg-red-50 text-red-800",
+  danger: "bg-red-50 text-red-700",
   default: "bg-marka-off text-marka-graphite",
+};
+
+const dots: Record<string, string> = {
+  success: "bg-marka-green",
+  warning: "bg-amber-500",
+  danger: "bg-red-500",
+  default: "bg-marka-gray",
 };
 
 export function StatusBadge({
@@ -21,10 +29,21 @@ export function StatusBadge({
   status: EstablishmentStatus | string;
 }) {
   const tone = STATUS_MAP[status as EstablishmentStatus] ?? "default";
+  const pulsing = tone === "warning" || tone === "danger";
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${tones[tone]}`}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+        tones[tone]
+      )}
     >
+      <span
+        className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          dots[tone],
+          pulsing && "animate-pulse-soft"
+        )}
+      />
       {status}
     </span>
   );

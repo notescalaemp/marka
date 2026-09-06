@@ -20,7 +20,7 @@ const SEVERITIES = [
 const TONE: Record<string, string> = {
   critical: "bg-red-50 text-red-800",
   warning: "bg-amber-50 text-amber-800",
-  opportunity: "bg-emerald-50 text-emerald-800",
+  opportunity: "bg-marka-green-soft text-marka-green-dark",
   info: "bg-sky-50 text-sky-800",
 };
 
@@ -87,8 +87,8 @@ export function AlertsPage() {
             onClick={() => setSeverity(s)}
             className={`rounded-md border px-2.5 py-1 text-xs capitalize transition-colors ${
               severity === s
-                ? "border-marka-black bg-marka-black text-marka-white"
-                : "border-marka-graphite/20 bg-marka-white text-marka-graphite"
+                ? "border-transparent bg-marka-gradient text-white shadow-card-hover"
+                : "border-black/10 bg-white text-marka-graphite hover:border-marka-green/40 hover:text-marka-green"
             }`}
           >
             {s}
@@ -106,7 +106,7 @@ export function AlertsPage() {
           {filtered.map((a) => (
             <div
               key={a.id}
-              className="rounded-lg border border-marka-graphite/10 bg-marka-white p-4"
+              className="card p-4"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
@@ -120,7 +120,7 @@ export function AlertsPage() {
               {a.cta ? (
                 <button
                   type="button"
-                  className="mt-3 text-xs font-medium text-emerald-700 underline"
+                  className="mt-3 text-xs font-medium text-marka-green-dark underline"
                   onClick={() => toast.show(`CTA: ${a.cta}`)}
                 >
                   {a.cta}

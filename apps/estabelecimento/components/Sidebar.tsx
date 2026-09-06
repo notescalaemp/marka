@@ -145,42 +145,57 @@ export function Sidebar() {
   const { role } = useStore();
 
   return (
-    <aside className="hidden h-full w-60 shrink-0 flex-col border-r border-marka-graphite/10 bg-marka-black text-marka-white lg:flex">
-      <div className="border-b border-marka-graphite/20 px-4 py-5">
-        <MarkaMark className="text-marka-white" />
-        <p className="mt-1 text-xs text-marka-gray">Estabelecimento</p>
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col glass-panel border-r border-black/[0.06] lg:flex">
+      <div className="flex h-16 shrink-0 items-center border-b border-black/[0.06] px-5">
+        <MarkaMark className="text-marka-black" />
       </div>
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-        {groups.map((group) => (
-          <div key={group.label}>
-            <p className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wide text-marka-gray">
-              {group.label}
-            </p>
-            <ul className="space-y-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const allowed = canAccess(role as Role, item.permission);
-                if (!allowed) return null;
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                        isActive(pathname, item.href)
-                          ? "bg-marka-graphite text-marka-white"
-                          : "text-marka-gray hover:bg-marka-graphite/50 hover:text-marka-white"
-                      )}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+      <nav className="stagger flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {groups.map((group) => {
+          const visibleItems = group.items.filter((item) =>
+            canAccess(role as Role, item.permission)
+          );
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={group.label}>
+              <p className="mb-2 px-2.5 text-[10.5px] font-semibold uppercase tracking-widest text-marka-gray/80">
+                {group.label}
+              </p>
+              <ul className="space-y-0.5">
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(pathname, item.href);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-200",
+                          active
+                            ? "bg-marka-green-soft text-marka-green-dark"
+                            : "text-marka-graphite/80 hover:bg-marka-off hover:text-marka-black"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-marka-gradient transition-all duration-200",
+                            active ? "opacity-100" : "opacity-0 group-hover:opacity-30"
+                          )}
+                        />
+                        <Icon
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-colors",
+                            active ? "text-marka-green" : "text-marka-gray group-hover:text-marka-graphite"
+                          )}
+                        />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
     </aside>
   );

@@ -18,7 +18,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              "rounded-md bg-marka-black px-4 py-3 text-sm text-marka-white shadow-lg"
+              "animate-slide-in-right rounded-xl border border-black/[0.06] bg-white/95 px-4 py-3 text-sm text-marka-black shadow-pop backdrop-blur-xl"
             )}
             role="status"
           >
