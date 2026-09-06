@@ -16,12 +16,23 @@ import {
   ShoppingBag,
   FileBarChart,
   Megaphone,
+  Gift,
 } from "lucide-react";
 import { cn } from "@marka/ui/cn";
+import { Badge } from "@marka/ui/badge";
 import { MarkaMark } from "./MarkaMark";
 import { useStore } from "@/lib/store";
 import { canAccess } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
+
+// "Indique e Ganhe" is not part of the role → permission matrix on purpose
+// (see packages/auth/src/rbac.ts comment): it's gated on the establishment's
+// own AmbassadorProfile, not on a role. OWNER/ADMIN only — they're the ones
+// who request withdrawals. The backend re-checks this independently on
+// every /ambassador/* request; this only controls whether the link shows.
+function canSeeAmbassadorProgram(role: Role, ambassadorStatus: string | null | undefined) {
+  return ambassadorStatus === "ACTIVE" && (role === "OWNER" || role === "ADMIN");
+}
 
 const groups = [
   {
@@ -134,6 +145,12 @@ const groups = [
   },
 ];
 
+const ambassadorItem = {
+  href: "/indique-e-ganhe",
+  label: "Indique e Ganhe",
+  icon: Gift,
+};
+
 function isActive(pathname: string, href: string) {
   if (pathname === href) return true;
   if (pathname.startsWith(`${href}/`)) return true;
@@ -142,7 +159,8 @@ function isActive(pathname: string, href: string) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { role } = useStore();
+  const { role, establishment } = useStore();
+  const showAmbassador = canSeeAmbassadorProgram(role as Role, establishment?.ambassador?.status);
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col glass-panel border-r border-black/[0.06] lg:flex">
@@ -196,6 +214,45 @@ export function Sidebar() {
             </div>
           );
         })}
+        {showAmbassador && (
+          <div>
+            <p className="mb-2 px-2.5 text-[10.5px] font-semibold uppercase tracking-widest text-marka-gray/80">
+              Crescimento
+            </p>
+            <ul className="space-y-0.5">
+              <li>
+                <Link
+                  href={ambassadorItem.href}
+                  className={cn(
+                    "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-200",
+                    isActive(pathname, ambassadorItem.href)
+                      ? "bg-marka-green-soft text-marka-green-dark"
+                      : "text-marka-graphite/80 hover:bg-marka-off hover:text-marka-black"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-marka-gradient transition-all duration-200",
+                      isActive(pathname, ambassadorItem.href) ? "opacity-100" : "opacity-0 group-hover:opacity-30"
+                    )}
+                  />
+                  <Gift
+                    className={cn(
+                      "h-4 w-4 shrink-0 transition-colors",
+                      isActive(pathname, ambassadorItem.href)
+                        ? "text-marka-green"
+                        : "text-marka-gray group-hover:text-marka-graphite"
+                    )}
+                  />
+                  <span className="truncate">{ambassadorItem.label}</span>
+                  <Badge className="ml-auto bg-marka-green-soft px-1.5 py-0 text-[9px] font-semibold text-marka-green-dark">
+                    Embaixador
+                  </Badge>
+                </Link>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
     </aside>
   );

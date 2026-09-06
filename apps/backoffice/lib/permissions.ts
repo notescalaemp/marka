@@ -21,6 +21,7 @@ const ALL: Permission[] = [
   "administrators",
   "settings",
   "impersonate",
+  "ambassadors",
 ];
 
 const ROLES: Record<Role, Permission[]> = {
@@ -37,6 +38,7 @@ const ROLES: Record<Role, Permission[]> = {
     "alerts",
     "audit_logs",
     "settings",
+    "ambassadors",
   ],
   support: [
     "overview",
@@ -65,6 +67,7 @@ const ROLES: Record<Role, Permission[]> = {
     "alerts",
     "audit_logs",
     "support",
+    "ambassadors",
   ],
   product: [
     "overview",

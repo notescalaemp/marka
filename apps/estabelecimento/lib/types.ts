@@ -55,6 +55,9 @@ export interface Establishment {
   address: string;
   hours: string;
   niche: string;
+  // Present only when the establishment was promoted to Embaixador by an
+  // Administrator — never set/cleared by the frontend itself.
+  ambassador?: { code: string; status: "ACTIVE" | "PAUSED" | "SUSPENDED" | "REMOVED" } | null;
 }
 
 export interface Service {

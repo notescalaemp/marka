@@ -31,7 +31,19 @@ import type {
   AdminUserListItemDto,
   AdminUsersListDto,
 } from "./api-types";
-import type { Role } from "./types";
+import type {
+  AdminCommissionRow,
+  AdminReferralRow,
+  AdminWithdrawalRow,
+  AmbassadorDetail,
+  AmbassadorOverview,
+  AmbassadorProgramSettingsDto,
+  AmbassadorRow,
+  AmbassadorStatus,
+  CommissionStatus,
+  Role,
+  WithdrawalStatus,
+} from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -387,4 +399,88 @@ export function startAdminImpersonation(establishmentId: string) {
 
 export function endAdminImpersonation() {
   return apiDelete<void>("/api/admin/impersonate");
+}
+
+// --- Indique e Ganhe (ambassador program) ---
+export function getAmbassadorOverview(period: "7d" | "30d" | "90d" | "12m" = "30d") {
+  return apiGet<AmbassadorOverview>(`/api/admin/ambassadors/overview${buildQuery({ period })}`);
+}
+
+export interface AmbassadorsQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+}
+
+export function getAmbassadors(query: AmbassadorsQuery = {}) {
+  return requestWithMeta<AmbassadorRow[], AdminListMeta>(`/api/admin/ambassadors${buildQuery(query)}`);
+}
+
+export function getAmbassador(id: string) {
+  return apiGet<AmbassadorDetail>(`/api/admin/ambassadors/${id}`);
+}
+
+export function setAmbassadorStatus(id: string, action: "pause" | "suspend" | "reactivate" | "remove", reason?: string) {
+  return apiPatch<{ id: string; status: AmbassadorStatus }>(`/api/admin/ambassadors/${id}/status`, {
+    action,
+    reason,
+  });
+}
+
+export interface EstablishmentAmbassadorDto {
+  id: string;
+  code: string;
+  status: AmbassadorStatus;
+  createdAt: string;
+  removedAt: string | null;
+}
+
+export function getEstablishmentAmbassador(establishmentId: string) {
+  return apiGet<EstablishmentAmbassadorDto | null>(`/api/admin/establishments/${establishmentId}/ambassador`);
+}
+
+export function promoteToAmbassador(establishmentId: string) {
+  return apiPost<{ code: string; status: AmbassadorStatus; createdAt: string }>(
+    `/api/admin/establishments/${establishmentId}/ambassador`
+  );
+}
+
+export function getAdminReferrals(query: { page?: number; pageSize?: number } = {}) {
+  return requestWithMeta<AdminReferralRow[], AdminListMeta>(`/api/admin/ambassadors/referrals${buildQuery(query)}`);
+}
+
+export function getAdminCommissions(query: { page?: number; pageSize?: number; status?: string } = {}) {
+  return requestWithMeta<AdminCommissionRow[], AdminListMeta>(`/api/admin/ambassadors/commissions${buildQuery(query)}`);
+}
+
+export function setAdminCommissionStatus(id: string, action: "approve" | "cancel") {
+  return apiPatch<{ id: string; status: CommissionStatus }>(`/api/admin/ambassadors/commissions/${id}`, { action });
+}
+
+export function getAdminWithdrawals(query: { page?: number; pageSize?: number; status?: string } = {}) {
+  return requestWithMeta<AdminWithdrawalRow[], AdminListMeta>(`/api/admin/ambassadors/withdrawals${buildQuery(query)}`);
+}
+
+export function setAdminWithdrawalStatus(
+  id: string,
+  action: "process" | "pay" | "reject",
+  rejectionReason?: string
+) {
+  return apiPatch<{ id: string; status: WithdrawalStatus }>(`/api/admin/ambassadors/withdrawals/${id}`, {
+    action,
+    rejectionReason,
+  });
+}
+
+export function getAmbassadorProgramSettings() {
+  return apiGet<AmbassadorProgramSettingsDto>("/api/admin/ambassadors/settings");
+}
+
+export function updateAmbassadorProgramSettings(input: Partial<AmbassadorProgramSettingsDto>) {
+  return apiPatch<AmbassadorProgramSettingsDto>("/api/admin/ambassadors/settings", input);
+}
+
+export function runRecurringCommissions() {
+  return apiPost<{ created: number }>("/api/admin/ambassadors/run-recurring");
 }

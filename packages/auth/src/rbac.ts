@@ -71,7 +71,8 @@ export type AdminPermission =
   | "audit_logs"
   | "administrators"
   | "settings"
-  | "impersonate";
+  | "impersonate"
+  | "ambassadors";
 
 const ADMIN_ALL: AdminPermission[] = [
   "overview",
@@ -94,6 +95,7 @@ const ADMIN_ALL: AdminPermission[] = [
   "administrators",
   "settings",
   "impersonate",
+  "ambassadors",
 ];
 
 const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
@@ -110,6 +112,7 @@ const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "alerts",
     "audit_logs",
     "settings",
+    "ambassadors",
   ],
   support: [
     "overview",
@@ -138,6 +141,7 @@ const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "alerts",
     "support",
     "audit_logs",
+    "ambassadors",
   ],
   product: [
     "overview",

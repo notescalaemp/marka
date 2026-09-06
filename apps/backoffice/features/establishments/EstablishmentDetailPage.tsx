@@ -8,12 +8,14 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/Button";
 import { ErrorState } from "@/components/ErrorState";
 import { Skeleton } from "@/components/Skeleton";
-import { ApiError, getAdminEstablishment } from "@/lib/api";
+import { ApiError, getAdminEstablishment, getEstablishmentAmbassador, promoteToAmbassador, type EstablishmentAmbassadorDto } from "@/lib/api";
 import type { EstablishmentDetailView } from "@/lib/api-types";
-import { formatNumber, formatPrice } from "@/lib/format";
+import { formatDate, formatNumber, formatPrice } from "@/lib/format";
 import { mapEstablishmentDetail } from "@/lib/mappers";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/Toast";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { AMBASSADOR_STATUS_TONE, StatusPill } from "@/features/ambassadors/StatusPill";
 
 export function EstablishmentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -25,6 +27,9 @@ export function EstablishmentDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [data, setData] = useState<EstablishmentDetailView | null>(null);
+  const [ambassador, setAmbassador] = useState<EstablishmentAmbassadorDto | null>(null);
+  const [confirmPromote, setConfirmPromote] = useState(false);
+  const [promoting, setPromoting] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -32,8 +37,12 @@ export function EstablishmentDetailPage() {
     setError(null);
     setNotFound(false);
     try {
-      const dto = await getAdminEstablishment(id);
+      const [dto, ambassadorDto] = await Promise.all([
+        getAdminEstablishment(id),
+        getEstablishmentAmbassador(id),
+      ]);
       setData(mapEstablishmentDetail(dto));
+      setAmbassador(ambassadorDto);
     } catch (err) {
       setData(null);
       if (err instanceof ApiError && err.status === 404) {
@@ -55,6 +64,21 @@ export function EstablishmentDetailPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function promote() {
+    if (!id) return;
+    setPromoting(true);
+    try {
+      await promoteToAmbassador(id);
+      toast.show("Estabelecimento agora é Embaixador");
+      setConfirmPromote(false);
+      await load();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Não foi possível promover");
+    } finally {
+      setPromoting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -299,6 +323,40 @@ export function EstablishmentDetailPage() {
         </span>
       </div>
 
+      <section className="card space-y-3 p-4">
+        <h2 className="text-sm font-semibold text-marka-graphite">Programa de Embaixadores</h2>
+        {ambassador ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <StatusPill tone={AMBASSADOR_STATUS_TONE[ambassador.status] ?? "default"}>{ambassador.status}</StatusPill>
+              <p className="text-sm text-marka-graphite">
+                Código <span className="font-mono font-medium">{ambassador.code}</span> · marka.ai/indique/{ambassador.code}
+              </p>
+              <p className="text-xs text-marka-gray">Embaixador desde {formatDate(ambassador.createdAt)}</p>
+            </div>
+            <div className="flex gap-2">
+              {ambassador.status !== "REMOVED" && (
+                <Link href={`/ambassadors/${ambassador.id}`}>
+                  <Button size="sm" variant="secondary">Ver no programa</Button>
+                </Link>
+              )}
+              {ambassador.status === "REMOVED" && (
+                <Button size="sm" onClick={() => setConfirmPromote(true)}>
+                  Tornar Embaixador
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-marka-gray">Não é Embaixador</p>
+            <Button size="sm" onClick={() => setConfirmPromote(true)}>
+              Tornar Embaixador
+            </Button>
+          </div>
+        )}
+      </section>
+
       <div className="stagger space-y-4">
         {sections.map((s) => (
           <section key={s.title} className="card space-y-3 p-4">
@@ -307,6 +365,15 @@ export function EstablishmentDetailPage() {
           </section>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={confirmPromote}
+        title="Tornar este estabelecimento um Embaixador?"
+        description="Ele terá acesso ao Indique e Ganhe e receberá um link exclusivo para indicações."
+        confirmLabel={promoting ? "Confirmando..." : "Confirmar"}
+        onCancel={() => setConfirmPromote(false)}
+        onConfirm={() => void promote()}
+      />
     </div>
   );
 }

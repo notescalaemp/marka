@@ -188,6 +188,8 @@ model Establishment {
   auditLogs     AuditLog[]
   favoritedBy   FavoriteEstablishment[]
   supportTickets SupportTicket[]
+  ambassadorProfile   AmbassadorProfile?
+  referredByReferral  Referral?
 
   @@map("establishments")
 }
@@ -721,4 +723,198 @@ model PlatformSettings {
   updatedById String?
 
   @@map("platform_settings")
+}
+
+// ---------------------------------------------------------------------------
+// "Indique e Ganhe" — ambassador referral program. Deliberately not modeled
+// as a BusinessRole: an ambassador is an attribute of the Establishment
+// (granted only by an Administrator), not a per-member role. Frontend
+// visibility AND the API guard (apps/api/lib/ambassador.ts) both key off
+// AmbassadorProfile.status, never off a client-supplied flag.
+// ---------------------------------------------------------------------------
+
+model AmbassadorProfile {
+  id               String            @id @default(cuid())
+  establishmentId  String            @unique
+  // Permanent once generated — never regenerated on demand (see product spec).
+  code             String            @unique
+  status           AmbassadorStatus  @default(ACTIVE)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  // Set only when status becomes REMOVED. The row itself is never deleted —
+  // referrals/commissions/withdrawals must survive removal intact.
+  removedAt        DateTime?
+  createdByAdminId String?
+
+  establishment Establishment          @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  referrals     Referral[]
+  commissions   Commission[]
+  withdrawals   AmbassadorWithdrawal[]
+  events        ReferralEvent[]
+
+  @@map("ambassador_profiles")
+}
+
+enum AmbassadorStatus {
+  ACTIVE
+  PAUSED
+  SUSPENDED
+  REMOVED
+}
+
+// One row per indicated establishment. Created at first link click (PENDING,
+// referredEstablishmentId null) so attribution survives navigation between
+// the link click and the end of signup — see visitorRef.
+model Referral {
+  id     String @id @default(cuid())
+  ambassadorId String
+
+  // Unique globally: a given establishment can only ever be attributed to
+  // one ambassador, and only once.
+  referredEstablishmentId String? @unique
+  // Token carried by the mk_ref cookie (apps/estabelecimento/app/indique/[code]).
+  // Deduplicates repeat clicks from the same visitor before signup completes.
+  visitorRef String @unique
+
+  status      ReferralStatus @default(PENDING)
+  source      String?
+  createdAt   DateTime       @default(now())
+  convertedAt DateTime?
+
+  ambassador            AmbassadorProfile @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  referredEstablishment Establishment?    @relation(fields: [referredEstablishmentId], references: [id], onDelete: SetNull)
+  commissions           Commission[]
+  events                ReferralEvent[]
+
+  @@index([ambassadorId])
+  @@map("referrals")
+}
+
+enum ReferralStatus {
+  PENDING
+  SIGNED_UP
+  UNDER_REVIEW
+  ACTIVE
+  CANCELED
+}
+
+model Commission {
+  id           String         @id @default(cuid())
+  ambassadorId String
+  referralId   String
+  kind         CommissionKind
+  // e.g. "2026-09" for a RECURRING commission — the idempotency key that
+  // stops the same billing cycle from generating the commission twice.
+  periodKey    String?
+  amount       Decimal          @db.Decimal(10, 2)
+  status       CommissionStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  approvedAt   DateTime?
+  paidAt       DateTime?
+  canceledAt   DateTime?
+
+  ambassador AmbassadorProfile @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  referral   Referral          @relation(fields: [referralId], references: [id], onDelete: Cascade)
+
+  @@unique([ambassadorId, referralId, kind, periodKey])
+  @@index([ambassadorId])
+  @@map("commissions")
+}
+
+enum CommissionKind {
+  BONUS
+  RECURRING
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELED
+}
+
+model AmbassadorWithdrawal {
+  id                  String           @id @default(cuid())
+  ambassadorId        String
+  amount              Decimal          @db.Decimal(10, 2)
+  status              WithdrawalStatus @default(PENDING)
+  requestedAt         DateTime         @default(now())
+  processedAt         DateTime?
+  processedByAdminId  String?
+  rejectionReason     String?
+
+  ambassador AmbassadorProfile @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+
+  @@index([ambassadorId])
+  @@map("ambassador_withdrawals")
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  PAID
+  REJECTED
+}
+
+// Append-only funnel/audit trail for the referral program itself (distinct
+// from AuditLog, which covers admin/financial actions on these records).
+model ReferralEvent {
+  id           String            @id @default(cuid())
+  ambassadorId String
+  referralId   String?
+  type         ReferralEventType
+  metadata     Json?
+  createdAt    DateTime          @default(now())
+
+  ambassador AmbassadorProfile @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  referral   Referral?         @relation(fields: [referralId], references: [id], onDelete: SetNull)
+
+  @@index([ambassadorId])
+  @@index([referralId])
+  @@map("referral_events")
+}
+
+enum ReferralEventType {
+  LINK_ACCESSED
+  SIGNUP_STARTED
+  SIGNUP_COMPLETED
+  ESTABLISHMENT_ACTIVATED
+  PLAN_SUBSCRIBED
+  PAYMENT_CONFIRMED
+  COMMISSION_CREATED
+  COMMISSION_APPROVED
+  COMMISSION_CANCELED
+  WITHDRAWAL_REQUESTED
+  WITHDRAWAL_PAID
+}
+
+// Singleton settings row (id is always "default"), mirroring PlatformSettings.
+// Kept flexible on purpose: changing commission rules must never require a
+// schema migration — see packages/shared/src/ambassador-commission.ts.
+model AmbassadorProgramSettings {
+  id                  String              @id @default("default")
+  active              Boolean             @default(true)
+  commissionModel     CommissionModel     @default(HYBRID)
+  commissionType      CommissionValueType @default(FIXED)
+  bonusAmount         Decimal?            @db.Decimal(10, 2)
+  recurringPercent    Decimal?            @db.Decimal(5, 2)
+  recurringFixed      Decimal?            @db.Decimal(10, 2)
+  minWithdrawalAmount Decimal             @default(100) @db.Decimal(10, 2)
+  approvalPeriodDays  Int                 @default(7)
+  cancellationRules   String?
+  updatedAt           DateTime            @updatedAt
+  updatedByAdminId    String?
+
+  @@map("ambassador_program_settings")
+}
+
+enum CommissionModel {
+  ONE_TIME
+  RECURRING
+  HYBRID
+}
+
+enum CommissionValueType {
+  PERCENT
+  FIXED
 }

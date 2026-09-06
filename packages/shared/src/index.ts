@@ -6,3 +6,4 @@ export * from "./rate-limit";
 export * from "./payments";
 export * from "./storage";
 export * from "./notifications";
+export * from "./ambassador-commission";

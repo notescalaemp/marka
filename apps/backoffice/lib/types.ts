@@ -26,7 +26,8 @@ export type Permission =
   | "support"
   | "administrators"
   | "settings"
-  | "impersonate";
+  | "impersonate"
+  | "ambassadors";
 
 export type AdminRole =
   | "Super Admin"
@@ -224,3 +225,105 @@ export interface CustomerRow {
 }
 
 export type PermissionMap = Record<Permission, boolean>;
+
+// ---------------------------------------------------------------------------
+// Indique e Ganhe (ambassador program)
+// ---------------------------------------------------------------------------
+
+export type AmbassadorStatus = "ACTIVE" | "PAUSED" | "SUSPENDED" | "REMOVED";
+export type ReferralStatus = "PENDING" | "SIGNED_UP" | "UNDER_REVIEW" | "ACTIVE" | "CANCELED";
+export type CommissionStatus = "PENDING" | "APPROVED" | "PAID" | "CANCELED";
+export type WithdrawalStatus = "PENDING" | "PROCESSING" | "PAID" | "REJECTED";
+export type CommissionModel = "ONE_TIME" | "RECURRING" | "HYBRID";
+export type CommissionValueType = "PERCENT" | "FIXED";
+
+export interface AmbassadorOverview {
+  activeAmbassadors: number;
+  totalReferrals: number;
+  newCustomers: number;
+  conversionRate: number;
+  commissionsGenerated: number;
+  commissionsPending: number;
+  commissionsPaid: number;
+  series: Array<{
+    date: string;
+    referrals: number;
+    conversions: number;
+    revenue: number;
+    commissions: number;
+  }>;
+}
+
+export interface AmbassadorRow {
+  id: string;
+  establishmentId: string;
+  establishmentName: string;
+  code: string;
+  status: AmbassadorStatus;
+  createdAt: string;
+  referrals: number;
+  conversions: number;
+  activeCustomers: number;
+  commissionGenerated: number;
+  availableBalance: number;
+}
+
+export interface AmbassadorDetail extends AmbassadorRow {
+  link: string;
+  revenueGenerated: number;
+  referralHistory: Array<{
+    id: string;
+    establishmentName: string | null;
+    status: ReferralStatus;
+    createdAt: string;
+    convertedAt: string | null;
+  }>;
+  financialHistory: Array<{
+    id: string;
+    kind: "commission" | "withdrawal";
+    label: string;
+    amount: number;
+    status: string;
+    date: string;
+  }>;
+}
+
+export interface AdminReferralRow {
+  id: string;
+  ambassadorName: string;
+  establishmentName: string | null;
+  status: ReferralStatus;
+  createdAt: string;
+  convertedAt: string | null;
+}
+
+export interface AdminCommissionRow {
+  id: string;
+  ambassadorName: string;
+  referralEstablishment: string | null;
+  kind: "BONUS" | "RECURRING";
+  amount: number;
+  status: CommissionStatus;
+  createdAt: string;
+}
+
+export interface AdminWithdrawalRow {
+  id: string;
+  ambassadorName: string;
+  amount: number;
+  status: WithdrawalStatus;
+  requestedAt: string;
+  processedAt: string | null;
+}
+
+export interface AmbassadorProgramSettingsDto {
+  active: boolean;
+  commissionModel: CommissionModel;
+  commissionType: CommissionValueType;
+  bonusAmount: number | null;
+  recurringPercent: number | null;
+  recurringFixed: number | null;
+  minWithdrawalAmount: number;
+  approvalPeriodDays: number;
+  cancellationRules: string | null;
+}

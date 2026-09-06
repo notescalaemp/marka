@@ -19,6 +19,7 @@ import {
   UserRound,
   ClipboardList,
   Sparkles,
+  Gift,
 } from "lucide-react";
 import { MarkaMark } from "./MarkaMark";
 import { useStore } from "@/lib/store";
@@ -122,6 +123,17 @@ const groups = [
         label: "Finance",
         icon: LineChart,
         permission: "finance" as const,
+      },
+    ],
+  },
+  {
+    label: "Growth",
+    items: [
+      {
+        href: "/ambassadors",
+        label: "Indique e Ganhe",
+        icon: Gift,
+        permission: "ambassadors" as const,
       },
     ],
   },

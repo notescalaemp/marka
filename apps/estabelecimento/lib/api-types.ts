@@ -69,6 +69,76 @@ export interface EstablishmentDto {
   acceptsOnlinePayment: boolean;
   photoUrls: string[];
   role?: BusinessRole;
+  ambassador?: { code: string; status: AmbassadorStatusApi } | null;
+}
+
+export type AmbassadorStatusApi = "ACTIVE" | "PAUSED" | "SUSPENDED" | "REMOVED";
+export type ReferralStatusApi = "PENDING" | "SIGNED_UP" | "UNDER_REVIEW" | "ACTIVE" | "CANCELED";
+export type CommissionStatusApi = "PENDING" | "APPROVED" | "PAID" | "CANCELED";
+export type WithdrawalStatusApi = "PENDING" | "PROCESSING" | "PAID" | "REJECTED";
+
+export interface AmbassadorProfileDto {
+  code: string;
+  status: AmbassadorStatusApi;
+  createdAt: string;
+  referrals: number;
+  activeCustomers: number;
+  availableBalance: number;
+}
+
+export interface AmbassadorOverviewDto {
+  metrics: {
+    referrals: number;
+    signups: number;
+    activeCustomers: number;
+    conversions: number;
+    commissions: number;
+    availableBalance: number;
+  };
+  funnel: Array<{ step: string; label: string; count: number }>;
+}
+
+export interface AmbassadorReferralDto {
+  id: string;
+  establishmentName: string | null;
+  createdAt: string;
+  status: ReferralStatusApi;
+  plan: string | null;
+  commission: number;
+}
+
+export interface AmbassadorMovementDto {
+  id: string;
+  kind: "commission" | "withdrawal";
+  label: string;
+  amount: number;
+  status: string;
+  date: string;
+}
+
+export interface AmbassadorCommissionsDto {
+  totals: {
+    total: number;
+    pending: number;
+    approved: number;
+    paid: number;
+    availableBalance: number;
+  };
+  movements: AmbassadorMovementDto[];
+}
+
+export interface AmbassadorWithdrawalDto {
+  id: string;
+  amount: number;
+  status: WithdrawalStatusApi;
+  requestedAt: string;
+  processedAt: string | null;
+}
+
+export interface AmbassadorWithdrawalsDto {
+  availableBalance: number;
+  minWithdrawalAmount: number;
+  withdrawals: AmbassadorWithdrawalDto[];
 }
 
 export interface ServiceDto {

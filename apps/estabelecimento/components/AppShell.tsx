@@ -59,6 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     role,
     authStatus,
     establishmentId,
+    establishment,
     memberships,
     dataError,
     refreshAll,
@@ -68,7 +69,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     (r) => pathname === r || pathname.startsWith(`${r}/`)
   );
   const permission = resolvePermission(pathname);
-  const allowed = !permission || canAccess(role as Role, permission);
+  // "Indique e Ganhe" isn't in the role → permission matrix (see
+  // packages/auth/src/rbac.ts): it's gated on the establishment's own
+  // AmbassadorProfile, granted only by an Administrator. This is
+  // defense-in-depth only — every /ambassador/* API call re-checks it too.
+  const isAmbassadorRoute = pathname.startsWith("/indique-e-ganhe");
+  const allowed = isAmbassadorRoute
+    ? establishment?.ambassador?.status === "ACTIVE" && (role === "OWNER" || role === "ADMIN")
+    : !permission || canAccess(role as Role, permission);
 
   useEffect(() => {
     setReady(true);

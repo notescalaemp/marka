@@ -83,6 +83,7 @@ export function mapEstablishment(dto: EstablishmentDto): Establishment {
     address: dto.address ?? "",
     hours: dto.hoursText ?? "",
     niche: dto.category,
+    ambassador: dto.ambassador ?? null,
   };
 }
 

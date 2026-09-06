@@ -1,4 +1,10 @@
 import type {
+  AmbassadorCommissionsDto,
+  AmbassadorOverviewDto,
+  AmbassadorProfileDto,
+  AmbassadorReferralDto,
+  AmbassadorWithdrawalDto,
+  AmbassadorWithdrawalsDto,
   AppointmentDto,
   AppointmentStatusApi,
   CampaignChannelApi,
@@ -608,4 +614,26 @@ export function getSubscription(establishmentId: string) {
   return apiGet<SubscriptionDto | null>(
     `/api/business/${establishmentId}/subscription`
   );
+}
+
+// --- Indique e Ganhe (ambassador program) ---
+export function getAmbassadorProfile(establishmentId: string) {
+  return apiGet<AmbassadorProfileDto>(`/api/business/${establishmentId}/ambassador`);
+}
+export function getAmbassadorOverview(establishmentId: string) {
+  return apiGet<AmbassadorOverviewDto>(`/api/business/${establishmentId}/ambassador/overview`);
+}
+export function listAmbassadorReferrals(establishmentId: string, pageSize = 50) {
+  return apiGet<AmbassadorReferralDto[]>(
+    `/api/business/${establishmentId}/ambassador/referrals${qs({ pageSize })}`
+  );
+}
+export function getAmbassadorCommissions(establishmentId: string) {
+  return apiGet<AmbassadorCommissionsDto>(`/api/business/${establishmentId}/ambassador/commissions`);
+}
+export function getAmbassadorWithdrawals(establishmentId: string) {
+  return apiGet<AmbassadorWithdrawalsDto>(`/api/business/${establishmentId}/ambassador/withdrawals`);
+}
+export function requestAmbassadorWithdrawal(establishmentId: string) {
+  return apiPost<AmbassadorWithdrawalDto>(`/api/business/${establishmentId}/ambassador/withdrawals`);
 }

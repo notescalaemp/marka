@@ -29,6 +29,7 @@ const ROUTE_PERMISSIONS: Record<string, Permission> = {
   "/audit-logs": "audit_logs",
   "/administrators": "administrators",
   "/settings": "settings",
+  "/ambassadors": "ambassadors",
 };
 
 function resolvePermission(pathname: string): Permission | null {

@@ -20,10 +20,12 @@ export const GET = withHandler(async (req: NextRequest, { params }) => {
 
   const establishment = await db.establishment.findFirst({
     where: { id: establishmentId },
+    include: { ambassadorProfile: { select: { code: true, status: true } } },
   });
   if (!establishment) throw new NotFoundError("Estabelecimento não encontrado");
 
-  return ok(establishment);
+  const { ambassadorProfile, ...rest } = establishment;
+  return ok({ ...rest, ambassador: ambassadorProfile });
 });
 
 const patchSchema = z.object({

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@marka/db";
 import { withHandler, ok, created, ConflictError, writeAuditLog } from "@marka/shared";
+import { AMBASSADOR_REFERRAL_COOKIE, clearedCookieOptions } from "@marka/auth";
 import { requireUserAuth } from "@/lib/auth-context";
 
 // GET: establishments the caller belongs to (any role) — never a global list,
@@ -37,6 +38,20 @@ export const POST = withHandler(async (req: NextRequest) => {
   const existing = await db.establishment.findUnique({ where: { slug: body.slug } });
   if (existing) throw new ConflictError("Esse slug já está em uso");
 
+  // Ambassador attribution: a pending Referral (created at /indique/[code]
+  // click time) is claimed here, if the visitor still carries the cookie.
+  // Never trust a client-supplied ambassador code in the request body —
+  // this is the only source of truth, and it can only ever attach once
+  // (Referral.referredEstablishmentId is unique).
+  const visitorRef = req.cookies.get(AMBASSADOR_REFERRAL_COOKIE)?.value;
+  const pendingReferral = visitorRef
+    ? await db.referral.findUnique({ where: { visitorRef } })
+    : null;
+  const claimableReferral =
+    pendingReferral && pendingReferral.status === "PENDING" && !pendingReferral.referredEstablishmentId
+      ? pendingReferral
+      : null;
+
   const establishment = await db.$transaction(async (tx) => {
     const est = await tx.establishment.create({
       data: {
@@ -49,6 +64,15 @@ export const POST = withHandler(async (req: NextRequest) => {
     await tx.establishmentMember.create({
       data: { establishmentId: est.id, userId: session.userId, role: "OWNER", joinedAt: new Date() },
     });
+    if (claimableReferral) {
+      await tx.referral.update({
+        where: { id: claimableReferral.id },
+        data: { referredEstablishmentId: est.id, status: "SIGNED_UP" },
+      });
+      await tx.referralEvent.create({
+        data: { ambassadorId: claimableReferral.ambassadorId, referralId: claimableReferral.id, type: "SIGNUP_COMPLETED" },
+      });
+    }
     return est;
   });
 
@@ -59,5 +83,7 @@ export const POST = withHandler(async (req: NextRequest) => {
     action: "establishment.create",
   });
 
-  return created({ ...establishment, role: "OWNER" as const });
+  const response = created({ ...establishment, role: "OWNER" as const });
+  if (claimableReferral) response.cookies.set(AMBASSADOR_REFERRAL_COOKIE, "", clearedCookieOptions());
+  return response;
 });
